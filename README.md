@@ -33,6 +33,7 @@ A [Meteor Client](https://github.com/MeteorDevelopment/meteor-client) addon that
 - `BonemealAura`
 - `Criticals`
 - `ItemESP`
+- `TreeBot`
 
 ## Stack
 

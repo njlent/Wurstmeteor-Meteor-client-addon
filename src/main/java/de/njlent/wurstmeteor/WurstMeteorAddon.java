@@ -19,6 +19,7 @@ import de.njlent.wurstmeteor.modules.world.autolibrarian.BookOfferListSetting;
 import de.njlent.wurstmeteor.modules.world.BonemealAuraModule;
 import de.njlent.wurstmeteor.modules.world.FeedAuraModule;
 import de.njlent.wurstmeteor.modules.world.NewChunksModule;
+import de.njlent.wurstmeteor.modules.world.TreeBotModule;
 import meteordevelopment.meteorclient.addons.GithubRepo;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
 import meteordevelopment.meteorclient.gui.utils.SettingsWidgetFactory;
@@ -51,6 +52,7 @@ public class WurstMeteorAddon extends MeteorAddon {
         modules.add(new CreativeFlightModule());
         modules.add(new InvWalkModule());
         modules.add(new NewChunksModule());
+        modules.add(new TreeBotModule());
         modules.add(new MultiAuraModule());
         modules.add(new BonemealAuraModule());
         modules.add(new CriticalsModule());
