@@ -3,6 +3,7 @@ package de.njlent.wurstmeteor.modules.world;
 import de.njlent.wurstmeteor.WurstMeteorAddon;
 import de.njlent.wurstmeteor.modules.world.autolibrarian.BlockHitSelection;
 import de.njlent.wurstmeteor.modules.world.autolibrarian.BookOffer;
+import de.njlent.wurstmeteor.modules.world.autolibrarian.BookOfferListSetting;
 import de.njlent.wurstmeteor.modules.world.autolibrarian.WantedBooks;
 import de.njlent.wurstmeteor.util.KeyBindingUtils;
 import de.njlent.wurstmeteor.util.RotationPackets;
@@ -43,25 +44,25 @@ import net.minecraft.village.VillagerProfession;
 import java.util.*;
 
 public class AutoLibrarianModule extends Module {
-    private static final List<String> DEFAULT_WANTED_BOOKS = List.of(
-        "minecraft:depth_strider;3",
-        "minecraft:efficiency;5",
-        "minecraft:feather_falling;4",
-        "minecraft:fortune;3",
-        "minecraft:looting;3",
-        "minecraft:mending;1",
-        "minecraft:protection;4",
-        "minecraft:respiration;3",
-        "minecraft:sharpness;5",
-        "minecraft:silk_touch;1",
-        "minecraft:unbreaking;3"
+    private static final List<BookOffer> DEFAULT_WANTED_BOOKS = List.of(
+        new BookOffer("minecraft:depth_strider", 3, 64),
+        new BookOffer("minecraft:efficiency", 5, 64),
+        new BookOffer("minecraft:feather_falling", 4, 64),
+        new BookOffer("minecraft:fortune", 3, 64),
+        new BookOffer("minecraft:looting", 3, 64),
+        new BookOffer("minecraft:mending", 1, 64),
+        new BookOffer("minecraft:protection", 4, 64),
+        new BookOffer("minecraft:respiration", 3, 64),
+        new BookOffer("minecraft:sharpness", 5, 64),
+        new BookOffer("minecraft:silk_touch", 1, 64),
+        new BookOffer("minecraft:unbreaking", 3, 64)
     );
 
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
-    private final Setting<List<String>> wantedBooks = sgGeneral.add(new StringListSetting.Builder()
+    private final Setting<List<BookOffer>> wantedBooks = sgGeneral.add(new BookOfferListSetting.Builder()
         .name("wanted-books")
-        .description("Wanted books as id;level or id;level;maxPrice.")
+        .description("Wanted librarian enchanted books with level and max price.")
         .defaultValue(DEFAULT_WANTED_BOOKS)
         .build()
     );
@@ -194,7 +195,7 @@ public class AutoLibrarianModule extends Module {
 
         info("Villager is selling %s for %s.", offer.nameWithLevel(mc.world.getRegistryManager()), offer.formattedPrice());
 
-        List<BookOffer> wanted = WantedBooks.parse(wantedBooks.get());
+        List<BookOffer> wanted = WantedBooks.sanitize(wantedBooks.get());
         int wantedIndex = WantedBooks.indexOf(wanted, offer);
         if (wantedIndex < 0 || offer.price() > wanted.get(wantedIndex).price()) {
             closeTradeScreen();

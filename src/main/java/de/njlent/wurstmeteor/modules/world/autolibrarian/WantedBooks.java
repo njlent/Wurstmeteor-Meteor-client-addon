@@ -3,25 +3,23 @@ package de.njlent.wurstmeteor.modules.world.autolibrarian;
 import de.njlent.wurstmeteor.modules.world.AutoLibrarianModule;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 public final class WantedBooks {
     private WantedBooks() {
     }
 
-    public static List<BookOffer> parse(List<String> rawEntries) {
+    public static List<BookOffer> sanitize(List<BookOffer> rawEntries) {
         ArrayList<BookOffer> offers = new ArrayList<>();
+        if (rawEntries == null) return offers;
 
-        for (String raw : rawEntries) {
-            BookOffer offer = BookOffer.parse(raw);
+        for (BookOffer offer : rawEntries) {
             if (offer == null || !offer.isMostlyValid()) continue;
             if (offers.stream().anyMatch(existing -> existing.sameEnchantAndLevel(offer))) continue;
             offers.add(offer);
         }
 
-        offers.sort(Comparator.naturalOrder());
-        return offers;
+        return BookOfferListSetting.sanitize(offers);
     }
 
     public static int indexOf(List<BookOffer> offers, BookOffer match) {
@@ -32,14 +30,14 @@ public final class WantedBooks {
         return -1;
     }
 
-    public static List<String> applyUpdateMode(List<BookOffer> offers, int index, BookOffer foundOffer, AutoLibrarianModule.UpdateBooksMode mode) {
+    public static List<BookOffer> applyUpdateMode(List<BookOffer> offers, int index, BookOffer foundOffer, AutoLibrarianModule.UpdateBooksMode mode) {
         if (index < 0 || index >= offers.size()) {
-            return offers.stream().map(BookOffer::toSettingString).toList();
+            return BookOfferListSetting.sanitize(offers);
         }
 
         switch (mode) {
             case Off -> {
-                return offers.stream().map(BookOffer::toSettingString).toList();
+                return BookOfferListSetting.sanitize(offers);
             }
             case Remove -> offers.remove(index);
             case Price -> {
@@ -48,6 +46,6 @@ public final class WantedBooks {
             }
         }
 
-        return offers.stream().map(BookOffer::toSettingString).toList();
+        return BookOfferListSetting.sanitize(offers);
     }
 }

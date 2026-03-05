@@ -15,11 +15,14 @@ import de.njlent.wurstmeteor.modules.render.ItemEspModule;
 import de.njlent.wurstmeteor.modules.render.TrajectoriesModule;
 import de.njlent.wurstmeteor.modules.world.AutoFarmModule;
 import de.njlent.wurstmeteor.modules.world.AutoLibrarianModule;
+import de.njlent.wurstmeteor.modules.world.autolibrarian.BookOfferListSetting;
 import de.njlent.wurstmeteor.modules.world.BonemealAuraModule;
 import de.njlent.wurstmeteor.modules.world.FeedAuraModule;
 import de.njlent.wurstmeteor.modules.world.NewChunksModule;
 import meteordevelopment.meteorclient.addons.GithubRepo;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
+import meteordevelopment.meteorclient.gui.utils.SettingsWidgetFactory;
+import meteordevelopment.meteorclient.gui.widgets.containers.WTable;
 import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import net.minecraft.item.Items;
@@ -32,6 +35,10 @@ public class WurstMeteorAddon extends MeteorAddon {
     @Override
     public void onInitialize() {
         LOG.info("Initializing Wurst for Meteor addon");
+        SettingsWidgetFactory.registerCustomFactory(BookOfferListSetting.class, (theme) -> (table, setting) -> {
+            WTable offerTable = table.add(theme.table()).expandX().widget();
+            BookOfferListSetting.fillTable(theme, offerTable, (BookOfferListSetting) setting);
+        });
 
         Modules modules = Modules.get();
         modules.add(new AutoFarmModule());
