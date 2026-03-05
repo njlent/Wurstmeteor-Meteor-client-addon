@@ -175,8 +175,7 @@ public class BonemealAuraModule extends Module {
     private boolean useBonemeal(TargetBlock target, Hand hand, boolean swingOnSuccess) {
         if (rotate.get()) RotationPackets.face(target.hitPos());
 
-        BlockPos interactionPos = target.pos().down();
-        BlockHitResult hitResult = new BlockHitResult(target.hitPos(), Direction.UP, interactionPos, false);
+        BlockHitResult hitResult = new BlockHitResult(target.hitPos(), Direction.UP, target.pos(), false);
 
         ActionResult result = mc.interactionManager.interactBlock(mc.player, hand, hitResult);
         if (!result.isAccepted()) return false;
@@ -200,7 +199,7 @@ public class BonemealAuraModule extends Module {
             blocks.add(new TargetBlock(pos.toImmutable(), pos.toCenterPos(), distanceSq));
         }
 
-        blocks.sort(Comparator.comparingDouble(TargetBlock::distanceSq).reversed());
+        blocks.sort(Comparator.comparingDouble(TargetBlock::distanceSq));
         return blocks;
     }
 
