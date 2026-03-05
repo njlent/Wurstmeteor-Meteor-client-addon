@@ -56,7 +56,7 @@ public class ItemEspModule extends Module {
     );
 
     public ItemEspModule() {
-        super(WurstMeteorAddon.CATEGORY, "item-esp", "Highlights dropped items with boxes and optional tracers.");
+        super(WurstMeteorAddon.CATEGORY, "item-esp", "Highlights dropped items with boxes and optional tracers, from Wurstmeter Addon.");
     }
 
     @EventHandler

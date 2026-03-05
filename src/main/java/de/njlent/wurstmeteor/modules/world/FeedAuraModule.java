@@ -76,7 +76,7 @@ public class FeedAuraModule extends Module {
     private AnimalEntity renderTarget;
 
     public FeedAuraModule() {
-        super(WurstMeteorAddon.CATEGORY, "feed-aura", "Automatically feeds nearby breedable animals.");
+        super(WurstMeteorAddon.CATEGORY, "feed-aura", "Automatically feeds nearby breedable animals, from Wurstmeter Addon.");
     }
 
     @Override

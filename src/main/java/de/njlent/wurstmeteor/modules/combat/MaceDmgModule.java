@@ -10,7 +10,7 @@ import net.minecraft.util.hit.HitResult;
 
 public class MaceDmgModule extends Module {
     public MaceDmgModule() {
-        super(WurstMeteorAddon.CATEGORY, "mace-dmg", "Spoofs vertical movement packets before mace hits for higher smash damage.");
+        super(WurstMeteorAddon.CATEGORY, "mace-dmg", "Spoofs vertical movement packets before mace hits for higher smash damage, from Wurstmeter Addon.");
     }
 
     @EventHandler

@@ -23,7 +23,7 @@ public class CriticalsModule extends Module {
     );
 
     public CriticalsModule() {
-        super(WurstMeteorAddon.CATEGORY, "criticals", "Forces critical hits when attacking valid targets.");
+        super(WurstMeteorAddon.CATEGORY, "criticals", "Forces critical hits when attacking valid targets, from Wurstmeter Addon.");
     }
 
     @Override

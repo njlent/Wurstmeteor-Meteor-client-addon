@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "id": "wurst-meteor-addon",
   "version": "${version}",
-  "name": "Wurst for Meteor Addon",
+  "name": "Wurstmeteor Addon",
   "description": "Wurst-inspired combat, farm, render, and chunk modules for Meteor Client.",
   "authors": [
-    "Noel Lent"
+    "nljent"
   ],
   "contact": {
     "sources": "https://github.com/njlent/wurst-for-meteor-client-addon"
