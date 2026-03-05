@@ -1,24 +1,25 @@
 {
   "schemaVersion": 1,
-  "id": "addon-template",
+  "id": "wurst-meteor-addon",
   "version": "${version}",
-  "name": "Addon Template",
-  "description": "An addon template for Meteor Client addons.",
+  "name": "Wurst for Meteor Addon",
+  "description": "Wurst-inspired combat, farm, render, and chunk modules for Meteor Client.",
   "authors": [
-    "seasnail"
+    "Noel Lent"
   ],
   "contact": {
-    "sources": "https://github.com/MeteorDevelopment/meteor-addon-template"
+    "sources": "https://github.com/njlent/wurst-for-meteor-client-addon"
   },
-  "icon": "assets/template/icon.png",
+  "license": "GPL-3.0-only",
+  "icon": "assets/wurstmeteor/icon.png",
   "environment": "client",
   "entrypoints": {
     "meteor": [
-      "com.example.addon.AddonTemplate"
+      "de.njlent.wurstmeteor.WurstMeteorAddon"
     ]
   },
   "mixins": [
-    "addon-template.mixins.json"
+    "wurst-meteor.mixins.json"
   ],
   "custom": {
     "meteor-client:color": "225,25,25",
@@ -30,7 +31,11 @@
   },
   "depends": {
     "java": ">=21",
-    "minecraft": ["${mc_version}"],
-    "meteor-client": "*"
+    "minecraft": [
+      "${mc_version}"
+    ],
+    "fabricloader": ">=0.18.0",
+    "meteor-client": "*",
+    "fabric-api": "*"
   }
 }
