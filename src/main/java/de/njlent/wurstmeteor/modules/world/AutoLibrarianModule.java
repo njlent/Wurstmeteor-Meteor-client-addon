@@ -121,6 +121,7 @@ public class AutoLibrarianModule extends Module {
     private boolean placingJobSite;
     private boolean breakingJobSite;
     private int actionDelay;
+    private int noLecternWarnCooldown;
 
     public AutoLibrarianModule() {
         super(WurstMeteorAddon.CATEGORY, "auto-librarian", "Cycles librarian lecterns until a wanted enchanted-book trade appears.");
@@ -142,6 +143,7 @@ public class AutoLibrarianModule extends Module {
         if (mc.player == null || mc.world == null || mc.interactionManager == null) return;
 
         if (actionDelay > 0) actionDelay--;
+        if (noLecternWarnCooldown > 0) noLecternWarnCooldown--;
 
         if (villager == null || villager.isRemoved() || villager.isDead()) {
             setTargetVillager();
@@ -188,7 +190,9 @@ public class AutoLibrarianModule extends Module {
         BookOffer offer = findEnchantedBookOffer(screenHandler.getRecipes());
         if (offer == null) {
             info("Villager is not selling an enchanted book; breaking lectern.");
-            closeTradeScreen();
+            closeTradeScreen(false);
+            actionDelay = 0;
+            placingJobSite = false;
             breakingJobSite = true;
             return;
         }
@@ -198,7 +202,10 @@ public class AutoLibrarianModule extends Module {
         List<BookOffer> wanted = WantedBooks.sanitize(wantedBooks.get());
         int wantedIndex = WantedBooks.indexOf(wanted, offer);
         if (wantedIndex < 0 || offer.price() > wanted.get(wantedIndex).price()) {
-            closeTradeScreen();
+            info("Offer does not match wanted books; rerolling lectern.");
+            closeTradeScreen(false);
+            actionDelay = 0;
+            placingJobSite = false;
             breakingJobSite = true;
             return;
         }
@@ -273,20 +280,10 @@ public class AutoLibrarianModule extends Module {
 
     private void setTargetJobSite() {
         if (villager == null) return;
-
-        Vec3d eyes = mc.player.getEyePos();
-        double rangeSq = range.get() * range.get();
-        int blockRange = (int) Math.ceil(range.get());
-
-        jobSite = BlockPos.streamOutwards(BlockPos.ofFloored(eyes), blockRange, blockRange, blockRange)
-            .filter(pos -> pos.toCenterPos().squaredDistanceTo(eyes) <= rangeSq)
-            .filter(pos -> mc.world.getBlockState(pos).isOf(Blocks.LECTERN))
-            .min(Comparator.comparingDouble(pos -> villager.squaredDistanceTo(pos.toCenterPos())))
-            .map(BlockPos::toImmutable)
-            .orElse(null);
+        jobSite = resolveJobSite();
 
         if (jobSite == null) {
-            error("Couldn't find the librarian's lectern.");
+            error("Couldn't find a lectern right next to the librarian.");
             toggle();
             return;
         }
@@ -297,8 +294,32 @@ public class AutoLibrarianModule extends Module {
     private void breakJobSite() {
         if (jobSite == null) return;
 
+        if (mc.currentScreen instanceof MerchantScreen) {
+            closeTradeScreen(false);
+            if (mc.currentScreen instanceof MerchantScreen) return;
+        }
+
+        double rangeSq = range.get() * range.get();
+        if (mc.player.squaredDistanceTo(jobSite.toCenterPos()) > rangeSq) {
+            BlockPos corrected = resolveJobSite();
+            if (corrected != null) {
+                jobSite = corrected;
+                return;
+            }
+
+            // Force a fresh adjacent-lectern lookup instead of breaking an out-of-range stale target.
+            jobSite = null;
+            return;
+        }
+
         BlockState state = mc.world.getBlockState(jobSite);
         if (state.isAir() || state.isReplaceable()) {
+            BlockPos corrected = resolveJobSite();
+            if (corrected != null && !corrected.equals(jobSite)) {
+                jobSite = corrected.toImmutable();
+                return;
+            }
+
             breakingJobSite = false;
             placingJobSite = true;
             return;
@@ -333,8 +354,10 @@ public class AutoLibrarianModule extends Module {
 
         FindItemResult lectern = InvUtils.find(Items.LECTERN);
         if (!lectern.found()) {
-            error("No lectern in inventory.");
-            toggle();
+            if (noLecternWarnCooldown <= 0) {
+                warning("No lectern in inventory. Waiting for lectern item.");
+                noLecternWarnCooldown = 40;
+            }
             return;
         }
 
@@ -390,8 +413,12 @@ public class AutoLibrarianModule extends Module {
     }
 
     private void closeTradeScreen() {
+        closeTradeScreen(true);
+    }
+
+    private void closeTradeScreen(boolean applyDelay) {
         if (mc.player != null) mc.player.closeHandledScreen();
-        actionDelay = 4;
+        if (applyDelay) actionDelay = 4;
     }
 
     private void lockInCurrentTrade(MerchantScreenHandler screenHandler) {
@@ -429,6 +456,41 @@ public class AutoLibrarianModule extends Module {
         }
 
         return null;
+    }
+
+    private BlockPos resolveJobSite() {
+        return findAdjacentLecternNearVillager();
+    }
+
+    private BlockPos findAdjacentLecternNearVillager() {
+        if (villager == null || mc.world == null || mc.player == null) return null;
+
+        double rangeSq = range.get() * range.get();
+        BlockPos villagerPos = villager.getBlockPos();
+
+        BlockPos best = null;
+        double bestDistance = Double.MAX_VALUE;
+
+        // Hard rule: lectern must touch the villager's block position.
+        for (Direction direction : Direction.values()) {
+            BlockPos candidate = villagerPos.offset(direction);
+            if (!mc.world.getBlockState(candidate).isOf(Blocks.LECTERN)) continue;
+            if (mc.player.squaredDistanceTo(candidate.toCenterPos()) > rangeSq) continue;
+
+            double distance = villager.squaredDistanceTo(candidate.toCenterPos());
+            if (distance >= bestDistance) continue;
+
+            best = candidate.toImmutable();
+            bestDistance = distance;
+        }
+
+        // Rare edge case: villager inside lectern block in very tight setups.
+        if (best == null && mc.world.getBlockState(villagerPos).isOf(Blocks.LECTERN)
+            && mc.player.squaredDistanceTo(villagerPos.toCenterPos()) <= rangeSq) {
+            return villagerPos.toImmutable();
+        }
+
+        return best;
     }
 
     private BlockHitSelection getPlacementHitResult(BlockPos targetPos) {
@@ -486,6 +548,7 @@ public class AutoLibrarianModule extends Module {
         placingJobSite = false;
         breakingJobSite = false;
         actionDelay = 0;
+        noLecternWarnCooldown = 0;
     }
 
     public enum UpdateBooksMode {
