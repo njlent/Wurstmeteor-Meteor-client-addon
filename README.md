@@ -4,7 +4,16 @@ Meteor addon that ports selected Wurst features to Fabric + Meteor Client for Mi
 
 ## Included Modules
 
+- `AntiSpam`
+- `ArrowDMG`
 - `AutoFarm`
+- `AutoLibrarian`
+- `BarrierESP`
+- `PotionSaver`
+- `CreativeFlight`
+- `InvWalk`
+- `Trajectories`
+- `HealthTags`
 - `FeedAura`
 - `MaceDMG`
 - `NewChunks`
