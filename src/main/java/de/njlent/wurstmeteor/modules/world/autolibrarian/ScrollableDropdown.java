@@ -4,7 +4,6 @@ import meteordevelopment.meteorclient.gui.renderer.GuiRenderer;
 import meteordevelopment.meteorclient.gui.themes.meteor.MeteorGuiTheme;
 import meteordevelopment.meteorclient.gui.themes.meteor.MeteorWidget;
 import meteordevelopment.meteorclient.gui.widgets.WWidget;
-import meteordevelopment.meteorclient.gui.widgets.containers.WView;
 import meteordevelopment.meteorclient.gui.widgets.input.WDropdown;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import net.minecraft.client.gui.Click;
@@ -64,26 +63,12 @@ public class ScrollableDropdown<T> extends WDropdown<T> implements MeteorWidget 
     public boolean render(GuiRenderer renderer, double mouseX, double mouseY, double delta) {
         if (!visible) return true;
 
-        if (isOver(mouseX, mouseY)) {
-            mouseOverTimer += delta;
-
-            if ((instantTooltips || mouseOverTimer >= 1) && tooltip != null) {
-                WView view = getView();
-                if (view == null || view.mouseOver) renderer.tooltip(tooltip);
-            }
-        } else {
-            mouseOverTimer = 0;
-        }
-
         onRender(renderer, mouseX, mouseY, delta);
 
         animProgress += (expanded ? 1 : -1) * delta * 14;
         animProgress = MathHelper.clamp(animProgress, 0, 1);
 
-        WView view = getView();
-        boolean rootInView = view == null || view.isWidgetInView(this);
-
-        if (animProgress > 0 && rootInView) {
+        if (animProgress > 0) {
             renderer.absolutePost(() -> {
                 double clipHeight = root.height * animProgress;
                 double clipY = openUpwards ? root.y + root.height - clipHeight : root.y;
