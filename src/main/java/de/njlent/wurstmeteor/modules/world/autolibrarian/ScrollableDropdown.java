@@ -252,7 +252,6 @@ public class ScrollableDropdown<T> extends WDropdown<T> implements MeteorWidget 
 
         @Override
         protected boolean propagateEvents(WWidget widget) {
-            if (widget.isFocused()) return true;
             return mouseOver && isWidgetInView(widget);
         }
 
