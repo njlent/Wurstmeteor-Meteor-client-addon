@@ -24,6 +24,7 @@ import meteordevelopment.meteorclient.addons.GithubRepo;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
 import meteordevelopment.meteorclient.gui.utils.SettingsWidgetFactory;
 import meteordevelopment.meteorclient.gui.widgets.containers.WTable;
+import meteordevelopment.meteorclient.gui.widgets.containers.WView;
 import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import net.minecraft.item.Items;
@@ -37,7 +38,11 @@ public class WurstMeteorAddon extends MeteorAddon {
     public void onInitialize() {
         LOG.info("Initializing Wurst for Meteor addon");
         SettingsWidgetFactory.registerCustomFactory(BookOfferListSetting.class, (theme) -> (table, setting) -> {
-            WTable offerTable = table.add(theme.table()).expandX().widget();
+            WView offerView = table.add(theme.view()).expandX().widget();
+            offerView.maxHeight = theme.scale(220);
+            offerView.scrollOnlyWhenMouseOver = false;
+
+            WTable offerTable = offerView.add(theme.table()).expandX().widget();
             BookOfferListSetting.fillTable(theme, offerTable, (BookOfferListSetting) setting);
         });
 

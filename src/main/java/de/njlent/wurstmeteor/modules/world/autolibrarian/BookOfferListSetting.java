@@ -4,7 +4,6 @@ import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.gui.GuiTheme;
 import meteordevelopment.meteorclient.gui.renderer.GuiRenderer;
 import meteordevelopment.meteorclient.gui.widgets.containers.WTable;
-import meteordevelopment.meteorclient.gui.widgets.input.WDropdown;
 import meteordevelopment.meteorclient.gui.widgets.input.WIntEdit;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WMinus;
@@ -117,8 +116,8 @@ public class BookOfferListSetting extends Setting<List<BookOffer>> {
 
             EnchantmentChoice[] selectedRef = {selected};
 
-            WDropdown<EnchantmentChoice> enchantmentDropdown = table
-                .add(theme.dropdown(choices.toArray(EnchantmentChoice[]::new), selectedRef[0]))
+            ScrollableDropdown<EnchantmentChoice> enchantmentDropdown = table
+                .add(new ScrollableDropdown<>(choices.toArray(EnchantmentChoice[]::new), selectedRef[0], 8))
                 .expandX()
                 .widget();
 
