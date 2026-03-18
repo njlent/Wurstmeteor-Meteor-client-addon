@@ -50,6 +50,7 @@ public class AutoLibrarianModule extends Module {
         new BookOffer("minecraft:feather_falling", 4, 64),
         new BookOffer("minecraft:fortune", 3, 64),
         new BookOffer("minecraft:looting", 3, 64),
+        new BookOffer("minecraft:lunge", 3, 64),
         new BookOffer("minecraft:mending", 1, 64),
         new BookOffer("minecraft:protection", 4, 64),
         new BookOffer("minecraft:respiration", 3, 64),
