@@ -15,6 +15,7 @@ import de.njlent.wurstmeteor.modules.render.ItemEspModule;
 import de.njlent.wurstmeteor.modules.render.TrajectoriesModule;
 import de.njlent.wurstmeteor.modules.world.AutoFarmModule;
 import de.njlent.wurstmeteor.modules.world.AutoLibrarianModule;
+import de.njlent.wurstmeteor.modules.world.AutoMineModule;
 import de.njlent.wurstmeteor.modules.world.autolibrarian.BookOfferListSetting;
 import de.njlent.wurstmeteor.modules.world.BonemealAuraModule;
 import de.njlent.wurstmeteor.modules.world.FeedAuraModule;
@@ -49,6 +50,7 @@ public class WurstMeteorAddon extends MeteorAddon {
         Modules modules = Modules.get();
         modules.add(new AutoFarmModule());
         modules.add(new AutoLibrarianModule());
+        modules.add(new AutoMineModule());
         modules.add(new FeedAuraModule());
         modules.add(new MaceDmgModule());
         modules.add(new ArrowDmgModule());

@@ -21,6 +21,7 @@ A [Meteor Client](https://github.com/MeteorDevelopment/meteor-client) addon that
 - `ArrowDMG`
 - `AutoFarm`
 - `AutoLibrarian`
+- `AutoMine`
 - `BarrierESP`
 - `PotionSaver`
 - `CreativeFlight`
