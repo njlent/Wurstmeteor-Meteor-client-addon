@@ -66,3 +66,21 @@ Output jar:
   - `modules/render`
 
 The implementation is structured for easy extension: each module is isolated and uses Meteor-native events/utilities.
+
+<br>
+<br>
+<br>
+
+> [!IMPORTANT]
+> Check out my other Meteor addons:
+>
+> <table>
+>   <tr>
+>     <td valign="middle">
+>       <img src="https://raw.githubusercontent.com/njlent/Minehop-Meteor-client-addon/refs/heads/main/img/icon.png" width="50" alt="WurstMeteor Addon icon">
+>     </td>
+>     <td valign="middle">
+>       <a href="https://github.com/njlent/Minehop-Meteor-client-addon">Minehop Addon - Source Engine-style bunnyhopping</a>
+>     </td>
+>   </tr>
+> </table>
