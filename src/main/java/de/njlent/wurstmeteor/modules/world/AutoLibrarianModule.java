@@ -45,16 +45,10 @@ import java.util.*;
 
 public class AutoLibrarianModule extends Module {
     private static final List<BookOffer> DEFAULT_WANTED_BOOKS = List.of(
-        new BookOffer("minecraft:depth_strider", 3, 64),
-        new BookOffer("minecraft:efficiency", 5, 64),
         new BookOffer("minecraft:feather_falling", 4, 64),
         new BookOffer("minecraft:fortune", 3, 64),
         new BookOffer("minecraft:looting", 3, 64),
-        new BookOffer("minecraft:lunge", 3, 64),
         new BookOffer("minecraft:mending", 1, 64),
-        new BookOffer("minecraft:protection", 4, 64),
-        new BookOffer("minecraft:respiration", 3, 64),
-        new BookOffer("minecraft:sharpness", 5, 64),
         new BookOffer("minecraft:silk_touch", 1, 64),
         new BookOffer("minecraft:unbreaking", 3, 64)
     );

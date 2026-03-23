@@ -77,7 +77,7 @@ public class TreeBotModule extends Module {
     private BlockPos prevPos;
 
     public TreeBotModule() {
-        super(WurstMeteorAddon.CATEGORY, "treebot", "Automatically finds and chops nearby small trees, from Wurstmeter Addon.");
+        super(WurstMeteorAddon.CATEGORY, "treebot", "Automatically finds and chops nearby small trees. As alternative to Baritone.");
     }
 
     @Override

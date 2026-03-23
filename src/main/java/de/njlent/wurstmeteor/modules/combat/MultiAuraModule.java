@@ -116,7 +116,7 @@ public class MultiAuraModule extends Module {
     private long nextAttackTime;
 
     public MultiAuraModule() {
-        super(WurstMeteorAddon.CATEGORY, "multi-aura", "Attacks multiple targets in range each attack cycle, from Wurstmeter Addon.");
+        super(WurstMeteorAddon.CATEGORY, "multi-aura", "Attacks multiple targets in range each attack cycle.");
     }
 
     @Override

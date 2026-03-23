@@ -110,7 +110,7 @@ public class AutoFarmModule extends Module {
     private int actionDelay;
 
     public AutoFarmModule() {
-        super(WurstMeteorAddon.CATEGORY, "auto-farm", "Harvests and replants nearby crops, from Wurstmeter Addon.");
+        super(WurstMeteorAddon.CATEGORY, "auto-farm", "Harvests and replants nearby crops.");
     }
 
     @Override

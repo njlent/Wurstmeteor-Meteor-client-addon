@@ -29,7 +29,7 @@ public class AutoMineModule extends Module {
     private boolean holdingAttackKey;
 
     public AutoMineModule() {
-        super(WurstMeteorAddon.CATEGORY, "auto-mine", "Automatically mines the block you're looking at, from Wurst7.");
+        super(WurstMeteorAddon.CATEGORY, "auto-mine", "Automatically mines the block you're looking at.");
     }
 
     @Override
@@ -42,6 +42,10 @@ public class AutoMineModule extends Module {
     public void onDeactivate() {
         stopBreaking();
         KeyBinding.updatePressedStates();
+    }
+
+    public boolean shouldCancelVanillaBlockBreaking() {
+        return isActive() && !superFastMode.get();
     }
 
     @EventHandler

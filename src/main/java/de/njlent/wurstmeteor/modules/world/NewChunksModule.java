@@ -110,7 +110,7 @@ public class NewChunksModule extends Module {
     private RegistryKey<World> lastDimension;
 
     public NewChunksModule() {
-        super(WurstMeteorAddon.CATEGORY, "new-chunks", "Detects likely new and old chunks using flowing-fluid heuristics, from Wurstmeter Addon.");
+        super(WurstMeteorAddon.CATEGORY, "new-chunks", "Detects likely new and old chunks using flowing-fluid heuristics.");
     }
 
     @Override

@@ -121,7 +121,7 @@ public class BonemealAuraModule extends Module {
     private int useDelay;
 
     public BonemealAuraModule() {
-        super(WurstMeteorAddon.CATEGORY, "bonemeal-aura", "Uses bonemeal on nearby growable blocks, from Wurstmeter Addon.");
+        super(WurstMeteorAddon.CATEGORY, "bonemeal-aura", "Uses bonemeal on nearby growable blocks.");
     }
 
     @Override
