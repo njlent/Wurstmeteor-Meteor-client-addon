@@ -3,8 +3,8 @@
 
  <img src="https://img.shields.io/badge/Meteor Client Addon-6f1ab1?logo=meteor&logoColor=white"/> 
  <br>
- <img src="https://img.shields.io/badge/minecraft-1.21.11-red"/> 
- <img src="https://img.shields.io/badge/minecraft-1.21.10-green"/> 
+ <img src="https://img.shields.io/badge/minecraft-1.21.11-green"/> 
+ <img src="https://img.shields.io/badge/minecraft-1.21.10-darkgreen"/> 
 
 </div>
 <br/>
@@ -12,7 +12,8 @@
 A [Meteor Client](https://github.com/MeteorDevelopment/meteor-client) addon that ports selected [Wurst Client](https://github.com/Wurst-Imperium/Wurst7) features to Meteor.
 
 ## Supported versions: 
-- **Minecraft 1.21.10**
+- **Minecraft 1.21.11 ([latest](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases))**
+- **Minecraft 1.21.10 ([up to 0.1.21](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.21))**
 
 ## Included Modules
 
@@ -37,10 +38,11 @@ A [Meteor Client](https://github.com/MeteorDevelopment/meteor-client) addon that
 
 ## Stack
 
-- Minecraft: `1.21.10`
-- Yarn: `1.21.10+build.3`
+- Minecraft: `1.21.11`
+- Yarn: `1.21.11+build.4`
 - Fabric Loader: `0.18.4`
-- Meteor Client: `1.21.10-SNAPSHOT`
+- Fabric API: `0.141.3+1.21.11`
+- Meteor Client: `1.21.11-SNAPSHOT`
 - Java: `21`
 
 ## Build

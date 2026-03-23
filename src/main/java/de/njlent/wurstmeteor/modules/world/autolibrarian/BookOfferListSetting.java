@@ -241,6 +241,7 @@ public class BookOfferListSetting extends Setting<List<BookOffer>> {
             new BookOffer("minecraft:feather_falling", 4, MAX_PRICE),
             new BookOffer("minecraft:fortune", 3, MAX_PRICE),
             new BookOffer("minecraft:looting", 3, MAX_PRICE),
+            new BookOffer("minecraft:lunge", 3, MAX_PRICE),
             new BookOffer("minecraft:mending", 1, MAX_PRICE),
             new BookOffer("minecraft:protection", 4, MAX_PRICE),
             new BookOffer("minecraft:respiration", 3, MAX_PRICE),
