@@ -33,7 +33,7 @@ import org.slf4j.Logger;
 
 public class WurstMeteorAddon extends MeteorAddon {
     public static final Logger LOG = LogUtils.getLogger();
-    public static final Category CATEGORY = new Category("Wurst", Items.NETHERITE_HOE.getDefaultStack());
+    public static Category CATEGORY;
 
     @Override
     public void onInitialize() {
@@ -71,6 +71,7 @@ public class WurstMeteorAddon extends MeteorAddon {
 
     @Override
     public void onRegisterCategories() {
+        if (CATEGORY == null) CATEGORY = new Category("Wurst", Items.NETHERITE_HOE.getDefaultStack());
         Modules.registerCategory(CATEGORY);
     }
 
