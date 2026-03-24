@@ -34,7 +34,7 @@
     "minecraft": [
       "${mc_version}"
     ],
-    "fabricloader": ">=0.16.9",
+    "fabricloader": ">=0.16.12",
     "meteor-client": "*",
     "fabric-api": "*"
   }

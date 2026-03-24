@@ -251,8 +251,8 @@ public class AutoLibrarianModule extends Module {
             if (!(entity instanceof VillagerEntity candidate)) continue;
             if (candidate.isRemoved() || !candidate.isAlive()) continue;
             if (mc.player.squaredDistanceTo(candidate) > rangeSq) continue;
-            if (candidate.getVillagerData().getProfession() != VillagerProfession.LIBRARIAN) continue;
-            if (candidate.getVillagerData().getLevel() != 1) continue;
+            if (!candidate.getVillagerData().profession().matchesKey(VillagerProfession.LIBRARIAN)) continue;
+            if (candidate.getVillagerData().level() != 1) continue;
             if (experiencedVillagers.contains(candidate.getUuid())) continue;
 
             double distance = mc.player.squaredDistanceTo(candidate);
@@ -360,7 +360,7 @@ public class AutoLibrarianModule extends Module {
             if (lectern.isHotbar()) {
                 InvUtils.swap(lectern.slot(), false);
             } else {
-                InvUtils.move().from(lectern.slot()).toHotbar(mc.player.getInventory().selectedSlot);
+                InvUtils.move().from(lectern.slot()).toHotbar(mc.player.getInventory().getSelectedSlot());
             }
             return;
         }
