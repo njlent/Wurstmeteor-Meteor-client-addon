@@ -5,6 +5,8 @@
  <br>
  <img src="https://img.shields.io/badge/minecraft-1.21.11-green"/> 
  <img src="https://img.shields.io/badge/minecraft-1.21.10-darkgreen"/> 
+ <img src="https://img.shields.io/badge/minecraft-1.21.5-darkgreen"/> 
+ <img src="https://img.shields.io/badge/minecraft-1.21.4-darkgreen"/> 
 
 </div>
 <br/>
@@ -14,6 +16,8 @@ A [Meteor Client](https://github.com/MeteorDevelopment/meteor-client) addon that
 ## Supported versions: 
 - **Minecraft 1.21.11 ([latest](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases))**
 - **Minecraft 1.21.10 ([up to 0.1.21](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.21))**
+- **Minecraft 1.21.10 ([legacy v0.1.22](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22))**
+- **Minecraft 1.21.10 ([legacy v0.1.22](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22))**
 
 ## Included Modules
 
