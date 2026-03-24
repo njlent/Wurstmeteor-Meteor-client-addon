@@ -54,6 +54,23 @@ tasks {
         }
     }
 
+    build {
+        doLast {
+            val archivesName = project.base.archivesName.get()
+            val currentVersion = project.version.toString()
+            val libsDir = layout.buildDirectory.dir("libs").get().asFile
+
+            libsDir.listFiles()
+                ?.filter { file ->
+                    file.isFile
+                        && file.extension == "jar"
+                        && file.name.startsWith("$archivesName-")
+                        && !file.name.contains(currentVersion)
+                }
+                ?.forEach { it.delete() }
+        }
+    }
+
     java {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
