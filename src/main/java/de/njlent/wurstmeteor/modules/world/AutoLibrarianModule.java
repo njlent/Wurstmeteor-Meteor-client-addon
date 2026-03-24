@@ -235,7 +235,7 @@ public class AutoLibrarianModule extends Module {
         }
 
         for (UUID villagerId : experiencedVillagers) {
-            if (mc.world.getEntity(villagerId) instanceof VillagerEntity experienced && experienced.isAlive()) {
+            if (findVillagerByUuid(villagerId) instanceof VillagerEntity experienced && experienced.isAlive()) {
                 Box box = lerpedBox(experienced, event.tickDelta);
                 event.renderer.box(box, redSide, redLine, meteordevelopment.meteorclient.renderer.ShapeMode.Both, 0);
             }
@@ -251,8 +251,8 @@ public class AutoLibrarianModule extends Module {
             if (!(entity instanceof VillagerEntity candidate)) continue;
             if (candidate.isRemoved() || !candidate.isAlive()) continue;
             if (mc.player.squaredDistanceTo(candidate) > rangeSq) continue;
-            if (!candidate.getVillagerData().profession().matchesKey(VillagerProfession.LIBRARIAN)) continue;
-            if (candidate.getVillagerData().level() != 1) continue;
+            if (candidate.getVillagerData().getProfession() != VillagerProfession.LIBRARIAN) continue;
+            if (candidate.getVillagerData().getLevel() != 1) continue;
             if (experiencedVillagers.contains(candidate.getUuid())) continue;
 
             double distance = mc.player.squaredDistanceTo(candidate);
@@ -360,7 +360,7 @@ public class AutoLibrarianModule extends Module {
             if (lectern.isHotbar()) {
                 InvUtils.swap(lectern.slot(), false);
             } else {
-                InvUtils.move().from(lectern.slot()).toHotbar(mc.player.getInventory().getSelectedSlot());
+                InvUtils.move().from(lectern.slot()).toHotbar(mc.player.getInventory().selectedSlot);
             }
             return;
         }
@@ -455,6 +455,16 @@ public class AutoLibrarianModule extends Module {
 
     private BlockPos resolveJobSite() {
         return findAdjacentLecternNearVillager();
+    }
+
+    private VillagerEntity findVillagerByUuid(UUID uuid) {
+        for (var entity : mc.world.getEntities()) {
+            if (entity instanceof VillagerEntity villagerEntity && uuid.equals(villagerEntity.getUuid())) {
+                return villagerEntity;
+            }
+        }
+
+        return null;
     }
 
     private BlockPos findAdjacentLecternNearVillager() {

@@ -78,12 +78,19 @@ public class BookOfferListSetting extends Setting<List<BookOffer>> {
     protected List<BookOffer> load(NbtCompound tag) {
         get().clear();
 
-        NbtList valueTag = tag.getListOrEmpty("value");
+        if (!tag.contains("value", NbtElement.LIST_TYPE)) {
+            value = sanitize(get());
+            return value;
+        }
+
+        NbtList valueTag = tag.getList("value", NbtElement.COMPOUND_TYPE);
+        if (valueTag.isEmpty()) valueTag = tag.getList("value", NbtElement.STRING_TYPE);
+
         for (NbtElement element : valueTag) {
             if (element instanceof NbtCompound offerTag) {
-                String id = offerTag.getString("id", "");
-                int level = offerTag.getInt("level", 1);
-                int price = offerTag.getInt("max_price", MAX_PRICE);
+                String id = offerTag.contains("id", NbtElement.STRING_TYPE) ? offerTag.getString("id") : "";
+                int level = offerTag.contains("level", NbtElement.NUMBER_TYPE) ? offerTag.getInt("level") : 1;
+                int price = offerTag.contains("max_price", NbtElement.NUMBER_TYPE) ? offerTag.getInt("max_price") : MAX_PRICE;
                 BookOffer offer = new BookOffer(id, level, price);
                 if (offer.isMostlyValid()) get().add(offer);
                 continue;
@@ -91,7 +98,7 @@ public class BookOfferListSetting extends Setting<List<BookOffer>> {
 
             // Backward-compat with old StringListSetting format.
             if (element instanceof NbtString stringTag) {
-                BookOffer offer = BookOffer.parse(stringTag.asString().orElse(""));
+                BookOffer offer = BookOffer.parse(stringTag.asString());
                 if (offer != null) get().add(offer);
             }
         }

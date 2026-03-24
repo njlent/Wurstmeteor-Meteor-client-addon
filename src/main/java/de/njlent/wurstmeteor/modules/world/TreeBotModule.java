@@ -233,7 +233,7 @@ public class TreeBotModule extends Module {
         if (!(mc.interactionManager instanceof ClientPlayerInteractionManagerAccessor accessor)) return;
 
         prevProgress = progress;
-        progress = accessor.meteor$getBreakingProgress();
+        progress = accessor.getBreakingProgress();
 
         if (progress < prevProgress) prevProgress = progress;
     }

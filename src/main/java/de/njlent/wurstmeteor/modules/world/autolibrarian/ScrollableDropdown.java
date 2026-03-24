@@ -6,7 +6,6 @@ import meteordevelopment.meteorclient.gui.themes.meteor.MeteorWidget;
 import meteordevelopment.meteorclient.gui.widgets.WWidget;
 import meteordevelopment.meteorclient.gui.widgets.input.WDropdown;
 import meteordevelopment.meteorclient.utils.render.color.Color;
-import net.minecraft.client.gui.Click;
 import net.minecraft.util.math.MathHelper;
 
 import static meteordevelopment.meteorclient.utils.Utils.getWindowHeight;
@@ -172,8 +171,8 @@ public class ScrollableDropdown<T> extends WDropdown<T> implements MeteorWidget 
         }
 
         @Override
-        public boolean onMouseClicked(Click click, boolean doubled) {
-            if (handleMouseOver && click.button() == GLFW_MOUSE_BUTTON_LEFT && !doubled) {
+        public boolean onMouseClicked(double mouseX, double mouseY, int button, boolean used) {
+            if (handleMouseOver && button == GLFW_MOUSE_BUTTON_LEFT && !used) {
                 draggingHandle = true;
                 return true;
             }
@@ -182,7 +181,7 @@ public class ScrollableDropdown<T> extends WDropdown<T> implements MeteorWidget 
         }
 
         @Override
-        public boolean onMouseReleased(Click click) {
+        public boolean onMouseReleased(double mouseX, double mouseY, int button) {
             draggingHandle = false;
             return false;
         }

@@ -23,7 +23,7 @@ public class AntiSpamModule extends Module {
         if (mc.inGameHud == null || mc.textRenderer == null) return;
 
         ChatHud chatHud = mc.inGameHud.getChatHud();
-        List<ChatHudLine.Visible> chatLines = ((ChatHudAccessor) chatHud).meteor$getVisibleMessages();
+        List<ChatHudLine.Visible> chatLines = ((ChatHudAccessor) chatHud).getVisibleMessages();
         if (chatLines.isEmpty()) return;
 
         int maxTextLength = (int) Math.floor(ChatHud.getWidth(mc.options.getChatWidth().getValue()) / mc.options.getChatScale().getValue());

@@ -11,9 +11,9 @@ public final class KeyBindingUtils {
 
     public static void resetPressedState(KeyBinding keyBinding) {
         MinecraftClient mc = MeteorClient.mc;
-        if (mc == null || mc.getWindow() == null) return;
+        if (mc == null) return;
 
         InputUtil.Key key = InputUtil.fromTranslationKey(keyBinding.getBoundKeyTranslationKey());
-        keyBinding.setPressed(InputUtil.isKeyPressed(mc.getWindow(), key.getCode()));
+        keyBinding.setPressed(InputUtil.isKeyPressed(mc.getWindow().getHandle(), key.getCode()));
     }
 }
