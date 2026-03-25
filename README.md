@@ -3,7 +3,6 @@
 
  <img src="https://img.shields.io/badge/Meteor Client Addon-6f1ab1?logo=meteor&logoColor=white"/> 
  <br>
- <img src="https://img.shields.io/badge/minecraft-1.21.11-red"/> 
  <img src="https://img.shields.io/badge/minecraft-1.21.10-green"/> 
 
 </div>
