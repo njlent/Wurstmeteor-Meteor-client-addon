@@ -107,6 +107,15 @@ public class AutoLibrarianModule extends Module {
         .build()
     );
 
+    private final Setting<Integer> professionTimeout = sgGeneral.add(new IntSetting.Builder()
+        .name("profession-timeout")
+        .description("Ticks to wait after placing a lectern before rerolling if the villager still is not a librarian. 0 = off.")
+        .defaultValue(100)
+        .range(0, 200)
+        .sliderRange(0, 200)
+        .build()
+    );
+
     private final Setting<Integer> repairMode = sgGeneral.add(new IntSetting.Builder()
         .name("repair-mode")
         .description("Stops breaking when held tool has this many uses left. 0 = off.")
@@ -124,6 +133,7 @@ public class AutoLibrarianModule extends Module {
     private boolean breakingJobSite;
     private int actionDelay;
     private int noLecternWarnCooldown;
+    private int nonLibrarianTicks;
     private boolean restorePauseOnLostFocus;
     private boolean previousPauseOnLostFocus;
 
@@ -179,6 +189,8 @@ public class AutoLibrarianModule extends Module {
             return;
         }
 
+        if (handleProfessionTimeout()) return;
+
         if (!(mc.currentScreen instanceof MerchantScreen merchantScreen)) {
             openTradeScreen();
             return;
@@ -197,11 +209,7 @@ public class AutoLibrarianModule extends Module {
 
         BookOffer offer = findEnchantedBookOffer(screenHandler.getRecipes());
         if (offer == null) {
-            info("Villager is not selling an enchanted book; breaking lectern.");
-            closeTradeScreen(false);
-            actionDelay = 0;
-            placingJobSite = false;
-            breakingJobSite = true;
+            startLecternReroll("Villager is not selling an enchanted book; breaking lectern.");
             return;
         }
 
@@ -210,11 +218,7 @@ public class AutoLibrarianModule extends Module {
         List<BookOffer> wanted = WantedBooks.sanitize(wantedBooks.get());
         int wantedIndex = WantedBooks.indexOf(wanted, offer);
         if (wantedIndex < 0 || offer.price() > wanted.get(wantedIndex).price()) {
-            info("Offer does not match wanted books; rerolling lectern.");
-            closeTradeScreen(false);
-            actionDelay = 0;
-            placingJobSite = false;
-            breakingJobSite = true;
+            startLecternReroll("Offer does not match wanted books; rerolling lectern.");
             return;
         }
 
@@ -429,6 +433,43 @@ public class AutoLibrarianModule extends Module {
         if (applyDelay) actionDelay = 4;
     }
 
+    private boolean handleProfessionTimeout() {
+        if (villager == null || placingJobSite || breakingJobSite) {
+            resetProfessionTimeout();
+            return false;
+        }
+
+        if (villager.getVillagerData().profession().matchesKey(VillagerProfession.LIBRARIAN)) {
+            resetProfessionTimeout();
+            return false;
+        }
+
+        int timeout = professionTimeout.get();
+        if (timeout <= 0) {
+            resetProfessionTimeout();
+            return false;
+        }
+
+        nonLibrarianTicks++;
+        if (nonLibrarianTicks < timeout) return false;
+
+        startLecternReroll("Villager did not become a librarian in time; rerolling lectern.");
+        return true;
+    }
+
+    private void startLecternReroll(String reason) {
+        info(reason);
+        closeTradeScreen(false);
+        actionDelay = 0;
+        placingJobSite = false;
+        breakingJobSite = true;
+        resetProfessionTimeout();
+    }
+
+    private void resetProfessionTimeout() {
+        nonLibrarianTicks = 0;
+    }
+
     private void lockInCurrentTrade(MerchantScreenHandler screenHandler) {
         if (mc.player == null || mc.getNetworkHandler() == null) return;
 
@@ -580,6 +621,7 @@ public class AutoLibrarianModule extends Module {
         breakingJobSite = false;
         actionDelay = 0;
         noLecternWarnCooldown = 0;
+        nonLibrarianTicks = 0;
     }
 
     public enum UpdateBooksMode {
