@@ -100,6 +100,13 @@ public class AutoLibrarianModule extends Module {
         .build()
     );
 
+    private final Setting<Boolean> backgroundMode = sgGeneral.add(new BoolSetting.Builder()
+        .name("background-mode")
+        .description("Keeps rerolling while the client is unfocused by disabling pause-on-lost-focus while active.")
+        .defaultValue(true)
+        .build()
+    );
+
     private final Setting<Integer> repairMode = sgGeneral.add(new IntSetting.Builder()
         .name("repair-mode")
         .description("Stops breaking when held tool has this many uses left. 0 = off.")
@@ -117,6 +124,8 @@ public class AutoLibrarianModule extends Module {
     private boolean breakingJobSite;
     private int actionDelay;
     private int noLecternWarnCooldown;
+    private boolean restorePauseOnLostFocus;
+    private boolean previousPauseOnLostFocus;
 
     public AutoLibrarianModule() {
         super(WurstMeteorAddon.CATEGORY, "auto-librarian", "Cycles librarian lecterns until a wanted enchanted-book trade appears.");
@@ -124,18 +133,22 @@ public class AutoLibrarianModule extends Module {
 
     @Override
     public void onActivate() {
+        syncBackgroundMode();
         resetState();
     }
 
     @Override
     public void onDeactivate() {
         if (mc.interactionManager != null) mc.interactionManager.cancelBlockBreaking();
+        restoreBackgroundMode();
         resetState();
     }
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
         if (mc.player == null || mc.world == null || mc.interactionManager == null) return;
+
+        syncBackgroundMode();
 
         if (actionDelay > 0) actionDelay--;
         if (noLecternWarnCooldown > 0) noLecternWarnCooldown--;
@@ -535,6 +548,29 @@ public class AutoLibrarianModule extends Module {
         double y = MathHelper.lerp(tickDelta, villager.lastRenderY, villager.getY()) - villager.getY();
         double z = MathHelper.lerp(tickDelta, villager.lastRenderZ, villager.getZ()) - villager.getZ();
         return villager.getBoundingBox().offset(x, y, z);
+    }
+
+    private void syncBackgroundMode() {
+        if (mc.options == null) return;
+
+        if (!backgroundMode.get()) {
+            restoreBackgroundMode();
+            return;
+        }
+
+        if (!restorePauseOnLostFocus) {
+            previousPauseOnLostFocus = mc.options.pauseOnLostFocus;
+            restorePauseOnLostFocus = true;
+        }
+
+        mc.options.pauseOnLostFocus = false;
+    }
+
+    private void restoreBackgroundMode() {
+        if (!restorePauseOnLostFocus || mc.options == null) return;
+
+        mc.options.pauseOnLostFocus = previousPauseOnLostFocus;
+        restorePauseOnLostFocus = false;
     }
 
     private void resetState() {
