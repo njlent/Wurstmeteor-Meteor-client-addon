@@ -1,11 +1,11 @@
 package de.njlent.wurstmeteor.modules.world.treebot.pathing;
 
-import net.minecraft.block.*;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
+import net.minecraft.world.level.block.*;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public class TreeBotPathFinder {
-    protected final MinecraftClient mc;
+    protected final Minecraft mc;
 
     private final TreeBotPlayerAbilities abilities;
     protected boolean fallingAllowed = true;
@@ -35,17 +35,17 @@ public class TreeBotPathFinder {
     protected boolean failed;
     private final ArrayList<TreeBotPathPos> path = new ArrayList<>();
 
-    public TreeBotPathFinder(MinecraftClient mc, BlockPos goal) {
+    public TreeBotPathFinder(Minecraft mc, BlockPos goal) {
         this.mc = mc;
         this.abilities = TreeBotPlayerAbilities.get(mc);
 
-        if (mc.player.isOnGround()) {
-            start = new TreeBotPathPos(BlockPos.ofFloored(mc.player.getX(), mc.player.getY() + 0.5, mc.player.getZ()));
+        if (mc.player.onGround()) {
+            start = new TreeBotPathPos(BlockPos.containing(mc.player.getX(), mc.player.getY() + 0.5, mc.player.getZ()));
         } else {
-            start = new TreeBotPathPos(BlockPos.ofFloored(mc.player.getX(), mc.player.getY(), mc.player.getZ()));
+            start = new TreeBotPathPos(BlockPos.containing(mc.player.getX(), mc.player.getY(), mc.player.getZ()));
         }
 
-        this.goal = goal.toImmutable();
+        this.goal = goal.immutable();
 
         costMap.put(start, 0F);
         queue.add(start, getHeuristic(start));
@@ -102,13 +102,13 @@ public class TreeBotPathFinder {
         BlockPos southWest = south.west();
         BlockPos northWest = north.west();
 
-        BlockPos up = pos.up();
-        BlockPos down = pos.down();
+        BlockPos up = pos.above();
+        BlockPos down = pos.below();
 
         boolean flying = canFlyAt(pos);
         boolean onGround = canBeSolid(down);
 
-        if (flying || onGround || pos.isJumping() || canMoveSidewaysInMidairAt(pos) || canClimbUpAt(pos.down())) {
+        if (flying || onGround || pos.isJumping() || canMoveSidewaysInMidairAt(pos) || canClimbUpAt(pos.below())) {
             if (checkHorizontalMovement(pos, north)) neighbors.add(new TreeBotPathPos(north));
             if (checkHorizontalMovement(pos, east)) neighbors.add(new TreeBotPathPos(east));
             if (checkHorizontalMovement(pos, south)) neighbors.add(new TreeBotPathPos(south));
@@ -120,8 +120,8 @@ public class TreeBotPathFinder {
             if (checkDiagonalMovement(pos, Direction.NORTH, Direction.WEST)) neighbors.add(new TreeBotPathPos(northWest));
         }
 
-        if (pos.getY() < mc.world.getTopYInclusive()
-            && canGoThrough(up.up())
+        if (pos.getY() < mc.level.getMaxY() - 1
+            && canGoThrough(up.above())
             && (flying || onGround || canClimbUpAt(pos))
             && (flying
             || canClimbUpAt(pos)
@@ -130,15 +130,15 @@ public class TreeBotPathFinder {
             || canSafelyStandOn(east)
             || canSafelyStandOn(south)
             || canSafelyStandOn(west))
-            && (divingAllowed || !mc.world.getBlockState(up.up()).isOf(Blocks.WATER))) {
+            && (divingAllowed || !mc.level.getBlockState(up.above()).is(Blocks.WATER))) {
             neighbors.add(new TreeBotPathPos(up, onGround));
         }
 
-        if (pos.getY() > mc.world.getBottomY()
+        if (pos.getY() > mc.level.getMinY()
             && canGoThrough(down)
-            && canGoAbove(down.down())
+            && canGoAbove(down.below())
             && (flying || canFallBelow(pos))
-            && (divingAllowed || !mc.world.getBlockState(pos).isOf(Blocks.WATER))) {
+            && (divingAllowed || !mc.level.getBlockState(pos).is(Blocks.WATER))) {
             neighbors.add(new TreeBotPathPos(down));
         }
 
@@ -146,13 +146,13 @@ public class TreeBotPathFinder {
     }
 
     private boolean checkHorizontalMovement(BlockPos current, BlockPos next) {
-        return isPassable(next) && (canFlyAt(current) || canGoThrough(next.down()) || canSafelyStandOn(next.down()));
+        return isPassable(next) && (canFlyAt(current) || canGoThrough(next.below()) || canSafelyStandOn(next.below()));
     }
 
     private boolean checkDiagonalMovement(BlockPos current, Direction direction1, Direction direction2) {
-        BlockPos horizontal1 = current.offset(direction1);
-        BlockPos horizontal2 = current.offset(direction2);
-        BlockPos next = horizontal1.offset(direction2);
+        BlockPos horizontal1 = current.relative(direction1);
+        BlockPos horizontal2 = current.relative(direction2);
+        BlockPos next = horizontal1.relative(direction2);
 
         return isPassableWithoutMining(horizontal1)
             && isPassableWithoutMining(horizontal2)
@@ -162,11 +162,11 @@ public class TreeBotPathFinder {
     protected boolean isPassable(BlockPos pos) {
         if (!canGoThrough(pos) && !isMineable(pos)) return false;
 
-        BlockPos up = pos.up();
+        BlockPos up = pos.above();
         if (!canGoThrough(up) && !isMineable(up)) return false;
 
-        if (!canGoAbove(pos.down())) return false;
-        if (!divingAllowed && mc.world.getBlockState(up).isOf(Blocks.WATER)) return false;
+        if (!canGoAbove(pos.below())) return false;
+        if (!divingAllowed && mc.level.getBlockState(up).is(Blocks.WATER)) return false;
 
         return true;
     }
@@ -174,11 +174,11 @@ public class TreeBotPathFinder {
     protected boolean isPassableWithoutMining(BlockPos pos) {
         if (!canGoThrough(pos)) return false;
 
-        BlockPos up = pos.up();
+        BlockPos up = pos.above();
         if (!canGoThrough(up)) return false;
 
-        if (!canGoAbove(pos.down())) return false;
-        if (!divingAllowed && mc.world.getBlockState(up).isOf(Blocks.WATER)) return false;
+        if (!canGoAbove(pos.below())) return false;
+        if (!divingAllowed && mc.level.getBlockState(up).is(Blocks.WATER)) return false;
 
         return true;
     }
@@ -188,29 +188,29 @@ public class TreeBotPathFinder {
     }
 
     protected boolean canBeSolid(BlockPos pos) {
-        var state = mc.world.getBlockState(pos);
+        var state = mc.level.getBlockState(pos);
         Block block = state.getBlock();
 
-        return (state.blocksMovement() && !(block instanceof AbstractSignBlock))
+        return (state.blocksMotion() && !(block instanceof SignBlock))
             || block instanceof LadderBlock
             || (abilities.jesus() && (block == Blocks.WATER || block == Blocks.LAVA));
     }
 
     private boolean canGoThrough(BlockPos pos) {
-        if (!mc.world.isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) return false;
+        if (!mc.level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4)) return false;
 
-        var state = mc.world.getBlockState(pos);
+        var state = mc.level.getBlockState(pos);
         Block block = state.getBlock();
 
-        if (state.blocksMovement() && !(block instanceof AbstractSignBlock)) return false;
-        if (block instanceof TripwireBlock || block instanceof PressurePlateBlock) return false;
+        if (state.blocksMotion() && !(block instanceof SignBlock)) return false;
+        if (block instanceof TripWireBlock || block instanceof BasePressurePlateBlock) return false;
 
-        if (!abilities.invulnerable() && (block == Blocks.LAVA || block instanceof AbstractFireBlock)) return false;
+        if (!abilities.invulnerable() && (block == Blocks.LAVA || block instanceof BaseFireBlock)) return false;
         return true;
     }
 
     private boolean canGoAbove(BlockPos pos) {
-        Block block = mc.world.getBlockState(pos).getBlock();
+        Block block = mc.level.getBlockState(pos).getBlock();
 
         return !(block instanceof FenceBlock) && !(block instanceof WallBlock) && !(block instanceof FenceGateBlock);
     }
@@ -218,8 +218,8 @@ public class TreeBotPathFinder {
     private boolean canSafelyStandOn(BlockPos pos) {
         if (!canBeSolid(pos)) return false;
 
-        var state = mc.world.getBlockState(pos);
-        Fluid fluid = state.getFluidState().getFluid();
+        var state = mc.level.getBlockState(pos);
+        Fluid fluid = state.getFluidState().getType();
 
         if (!abilities.invulnerable()
             && (state.getBlock() instanceof CactusBlock
@@ -232,28 +232,28 @@ public class TreeBotPathFinder {
     }
 
     private boolean canFallBelow(TreeBotPathPos pos) {
-        BlockPos down2 = pos.down(2);
+        BlockPos down2 = pos.below(2);
         if (fallingAllowed && canGoThrough(down2)) return true;
 
         if (!canSafelyStandOn(down2)) return false;
         if (abilities.immuneToFallDamage() && fallingAllowed) return true;
 
-        if (mc.world.getBlockState(down2).getBlock() instanceof SlimeBlock && fallingAllowed) return true;
+        if (mc.level.getBlockState(down2).getBlock() instanceof SlimeBlock && fallingAllowed) return true;
 
         BlockPos prevPos = pos;
         for (int i = 0; i <= (fallingAllowed ? 3 : 1); i++) {
             if (prevPos == null) return true;
-            if (!pos.up(i).equals(prevPos)) return true;
+            if (!pos.above(i).equals(prevPos)) return true;
 
-            Block prevBlock = mc.world.getBlockState(prevPos).getBlock();
-            var prevState = mc.world.getBlockState(prevPos);
-            Fluid prevFluid = prevState.getFluidState().getFluid();
+            Block prevBlock = mc.level.getBlockState(prevPos).getBlock();
+            var prevState = mc.level.getBlockState(prevPos);
+            Fluid prevFluid = prevState.getFluidState().getType();
 
             if (prevFluid == Fluids.WATER
                 || prevFluid == Fluids.FLOWING_WATER
                 || prevBlock instanceof LadderBlock
                 || prevBlock instanceof VineBlock
-                || prevBlock instanceof CobwebBlock) {
+                || prevBlock instanceof WebBlock) {
                 return true;
             }
 
@@ -264,15 +264,15 @@ public class TreeBotPathFinder {
     }
 
     private boolean canFlyAt(BlockPos pos) {
-        return abilities.flying() || (!abilities.noWaterSlowdown() && mc.world.getBlockState(pos).isOf(Blocks.WATER));
+        return abilities.flying() || (!abilities.noWaterSlowdown() && mc.level.getBlockState(pos).is(Blocks.WATER));
     }
 
     private boolean canClimbUpAt(BlockPos pos) {
-        Block block = mc.world.getBlockState(pos).getBlock();
+        Block block = mc.level.getBlockState(pos).getBlock();
 
         if (!abilities.spider() && !(block instanceof LadderBlock) && !(block instanceof VineBlock)) return false;
 
-        BlockPos up = pos.up();
+        BlockPos up = pos.above();
         if (!canBeSolid(pos.north())
             && !canBeSolid(pos.east())
             && !canBeSolid(pos.south())
@@ -288,13 +288,13 @@ public class TreeBotPathFinder {
     }
 
     private boolean canMoveSidewaysInMidairAt(BlockPos pos) {
-        Block blockFeet = mc.world.getBlockState(pos).getBlock();
-        if (blockFeet instanceof FluidBlock || blockFeet instanceof LadderBlock || blockFeet instanceof VineBlock || blockFeet instanceof CobwebBlock) {
+        Block blockFeet = mc.level.getBlockState(pos).getBlock();
+        if (blockFeet instanceof LiquidBlock || blockFeet instanceof LadderBlock || blockFeet instanceof VineBlock || blockFeet instanceof WebBlock) {
             return true;
         }
 
-        Block blockHead = mc.world.getBlockState(pos.up()).getBlock();
-        return blockHead instanceof FluidBlock || blockHead instanceof CobwebBlock;
+        Block blockHead = mc.level.getBlockState(pos.above()).getBlock();
+        return blockHead instanceof LiquidBlock || blockHead instanceof WebBlock;
     }
 
     private float getCost(BlockPos current, BlockPos next) {
@@ -303,15 +303,15 @@ public class TreeBotPathFinder {
 
         for (int i = 0; i < positions.length; i++) {
             BlockPos pos = positions[i];
-            Block block = mc.world.getBlockState(pos).getBlock();
+            Block block = mc.level.getBlockState(pos).getBlock();
 
             if (block == Blocks.WATER && !abilities.noWaterSlowdown()) costs[i] *= 1.3164437838225804F;
             else if (block == Blocks.LAVA) costs[i] *= 4.539515393656079F;
 
-            if (!canFlyAt(pos) && mc.world.getBlockState(pos.down()).getBlock() instanceof SoulSandBlock) costs[i] *= 2.5F;
+            if (!canFlyAt(pos) && mc.level.getBlockState(pos.below()).getBlock() instanceof SoulSandBlock) costs[i] *= 2.5F;
 
             if (isMineable(pos)) costs[i] *= 2F;
-            if (isMineable(pos.up())) costs[i] *= 2F;
+            if (isMineable(pos.above())) costs[i] *= 2F;
         }
 
         float cost = costs[0] + costs[1];
@@ -366,7 +366,7 @@ public class TreeBotPathFinder {
             pos = start;
 
             for (TreeBotPathPos next : prevPosMap.keySet()) {
-                if (getHeuristic(next) < getHeuristic(pos) && (canFlyAt(next) || canBeSolid(next.down()))) pos = next;
+                if (getHeuristic(next) < getHeuristic(pos) && (canFlyAt(next) || canBeSolid(next.below()))) pos = next;
             }
         }
 
@@ -385,7 +385,7 @@ public class TreeBotPathFinder {
 
         if (index == 0) {
             TreeBotPathPos pos = path.getFirst();
-            if (!isPassable(pos) || (!canFlyAt(pos) && !canGoThrough(pos.down()) && !canSafelyStandOn(pos.down()))) return false;
+            if (!isPassable(pos) || (!canFlyAt(pos) && !canGoThrough(pos.below()) && !canSafelyStandOn(pos.below()))) return false;
         }
 
         for (int i = Math.max(1, index); i < path.size(); i++) {

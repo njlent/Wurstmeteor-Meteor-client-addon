@@ -8,13 +8,13 @@ import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 
 public class AutoMineModule extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -41,7 +41,7 @@ public class AutoMineModule extends Module {
     @Override
     public void onDeactivate() {
         stopBreaking();
-        KeyBinding.updatePressedStates();
+        KeyMapping.setAll();
     }
 
     public boolean shouldCancelVanillaBlockBreaking() {
@@ -50,17 +50,17 @@ public class AutoMineModule extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (mc.player == null || mc.world == null || mc.interactionManager == null) return;
+        if (mc.player == null || mc.level == null || mc.gameMode == null) return;
 
-        HitResult hitResult = mc.crosshairTarget;
+        HitResult hitResult = mc.hitResult;
         if (!(hitResult instanceof BlockHitResult blockHitResult) || hitResult.getType() != HitResult.Type.BLOCK) {
             stopBreaking();
             return;
         }
 
         BlockPos pos = blockHitResult.getBlockPos();
-        BlockState state = mc.world.getBlockState(pos);
-        Direction side = blockHitResult.getSide();
+        BlockState state = mc.level.getBlockState(pos);
+        Direction side = blockHitResult.getDirection();
 
         if (state.isAir()) {
             stopBreaking();
@@ -72,13 +72,13 @@ public class AutoMineModule extends Module {
             return;
         }
 
-        boolean updated = mc.interactionManager.isBreakingBlock()
-            ? mc.interactionManager.updateBlockBreakingProgress(pos, side)
-            : mc.interactionManager.attackBlock(pos, side);
+        boolean updated = mc.gameMode.isDestroying()
+            ? mc.gameMode.continueDestroyBlock(pos, side)
+            : mc.gameMode.startDestroyBlock(pos, side);
 
-        if (!updated && mc.interactionManager.isBreakingBlock()) {
-            mc.interactionManager.cancelBlockBreaking();
-            updated = mc.interactionManager.attackBlock(pos, side);
+        if (!updated && mc.gameMode.isDestroying()) {
+            mc.gameMode.stopDestroyBlock();
+            updated = mc.gameMode.startDestroyBlock(pos, side);
         }
 
         if (!updated) {
@@ -86,7 +86,7 @@ public class AutoMineModule extends Module {
             return;
         }
 
-        mc.player.swingHand(Hand.MAIN_HAND);
+        mc.player.swing(InteractionHand.MAIN_HAND);
 
         if (superFastMode.get()) {
             pressAttackKey();
@@ -108,22 +108,22 @@ public class AutoMineModule extends Module {
     private void stopBreaking() {
         releaseAttackKey();
 
-        if (mc.interactionManager != null && mc.interactionManager.isBreakingBlock()) {
-            mc.interactionManager.cancelBlockBreaking();
+        if (mc.gameMode != null && mc.gameMode.isDestroying()) {
+            mc.gameMode.stopDestroyBlock();
         }
     }
 
     private void pressAttackKey() {
         if (holdingAttackKey) return;
 
-        mc.options.attackKey.setPressed(true);
+        mc.options.keyAttack.setDown(true);
         holdingAttackKey = true;
     }
 
     private void releaseAttackKey() {
         if (!holdingAttackKey) return;
 
-        mc.options.attackKey.setPressed(false);
+        mc.options.keyAttack.setDown(false);
         holdingAttackKey = false;
     }
 }

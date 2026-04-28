@@ -9,16 +9,16 @@ import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WMinus;
 import meteordevelopment.meteorclient.settings.IVisible;
 import meteordevelopment.meteorclient.settings.Setting;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtString;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.registry.tag.EnchantmentTags;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.Holder;
+import net.minecraft.tags.EnchantmentTags;
+import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -59,11 +59,11 @@ public class BookOfferListSetting extends Setting<List<BookOffer>> {
     }
 
     @Override
-    protected NbtCompound save(NbtCompound tag) {
-        NbtList valueTag = new NbtList();
+    protected CompoundTag save(CompoundTag tag) {
+        ListTag valueTag = new ListTag();
 
         for (BookOffer offer : sanitize(get())) {
-            NbtCompound offerTag = new NbtCompound();
+            CompoundTag offerTag = new CompoundTag();
             offerTag.putString("id", offer.id());
             offerTag.putInt("level", offer.level());
             if (offer.price() < MAX_PRICE) offerTag.putInt("max_price", offer.price());
@@ -75,22 +75,22 @@ public class BookOfferListSetting extends Setting<List<BookOffer>> {
     }
 
     @Override
-    protected List<BookOffer> load(NbtCompound tag) {
+    protected List<BookOffer> load(CompoundTag tag) {
         get().clear();
 
-        NbtList valueTag = tag.getListOrEmpty("value");
-        for (NbtElement element : valueTag) {
-            if (element instanceof NbtCompound offerTag) {
-                String id = offerTag.getString("id", "");
-                int level = offerTag.getInt("level", 1);
-                int price = offerTag.getInt("max_price", MAX_PRICE);
+        ListTag valueTag = tag.getListOrEmpty("value");
+        for (Tag element : valueTag) {
+            if (element instanceof CompoundTag offerTag) {
+                String id = offerTag.getStringOr("id", "");
+                int level = offerTag.getIntOr("level", 1);
+                int price = offerTag.getIntOr("max_price", MAX_PRICE);
                 BookOffer offer = new BookOffer(id, level, price);
                 if (offer.isMostlyValid()) get().add(offer);
                 continue;
             }
 
             // Backward-compat with old StringListSetting format.
-            if (element instanceof NbtString stringTag) {
+            if (element instanceof StringTag stringTag) {
                 BookOffer offer = BookOffer.parse(stringTag.asString().orElse(""));
                 if (offer != null) get().add(offer);
             }
@@ -121,35 +121,35 @@ public class BookOfferListSetting extends Setting<List<BookOffer>> {
                 .expandX()
                 .widget();
 
-            int levelValue = MathHelper.clamp(offer.level(), 1, selectedRef[0].maxLevel());
+            int levelValue = Mth.clamp(offer.level(), 1, selectedRef[0].maxLevel());
             WIntEdit levelEdit = table
                 .add(theme.intEdit(levelValue, 1, selectedRef[0].maxLevel(), 1, selectedRef[0].maxLevel(), true))
                 .widget();
 
-            int maxPrice = MathHelper.clamp(offer.price(), 1, MAX_PRICE);
+            int maxPrice = Mth.clamp(offer.price(), 1, MAX_PRICE);
             WIntEdit priceEdit = table
                 .add(theme.intEdit(maxPrice, 1, MAX_PRICE, 1, MAX_PRICE, true))
                 .widget();
 
             enchantmentDropdown.action = () -> {
                 selectedRef[0] = enchantmentDropdown.get();
-                int clampedLevel = MathHelper.clamp(levelEdit.get(), 1, selectedRef[0].maxLevel());
-                offers.set(offerIndex, new BookOffer(selectedRef[0].id(), clampedLevel, MathHelper.clamp(priceEdit.get(), 1, MAX_PRICE)));
+                int clampedLevel = Mth.clamp(levelEdit.get(), 1, selectedRef[0].maxLevel());
+                offers.set(offerIndex, new BookOffer(selectedRef[0].id(), clampedLevel, Mth.clamp(priceEdit.get(), 1, MAX_PRICE)));
                 setting.set(sanitize(offers));
                 fillTable(theme, table, setting);
             };
 
             levelEdit.action = () -> {
-                int clampedLevel = MathHelper.clamp(levelEdit.get(), 1, selectedRef[0].maxLevel());
+                int clampedLevel = Mth.clamp(levelEdit.get(), 1, selectedRef[0].maxLevel());
                 levelEdit.set(clampedLevel);
-                offers.set(offerIndex, new BookOffer(selectedRef[0].id(), clampedLevel, MathHelper.clamp(priceEdit.get(), 1, MAX_PRICE)));
+                offers.set(offerIndex, new BookOffer(selectedRef[0].id(), clampedLevel, Mth.clamp(priceEdit.get(), 1, MAX_PRICE)));
                 setting.set(sanitize(offers));
             };
 
             priceEdit.action = () -> {
-                int clampedPrice = MathHelper.clamp(priceEdit.get(), 1, MAX_PRICE);
+                int clampedPrice = Mth.clamp(priceEdit.get(), 1, MAX_PRICE);
                 priceEdit.set(clampedPrice);
-                offers.set(offerIndex, new BookOffer(selectedRef[0].id(), MathHelper.clamp(levelEdit.get(), 1, selectedRef[0].maxLevel()), clampedPrice));
+                offers.set(offerIndex, new BookOffer(selectedRef[0].id(), Mth.clamp(levelEdit.get(), 1, selectedRef[0].maxLevel()), clampedPrice));
                 setting.set(sanitize(offers));
             };
 
@@ -193,7 +193,7 @@ public class BookOfferListSetting extends Setting<List<BookOffer>> {
         for (BookOffer offer : input) {
             if (offer == null || !offer.isMostlyValid()) continue;
             if (result.stream().anyMatch(existing -> existing.sameEnchantAndLevel(offer))) continue;
-            result.add(new BookOffer(offer.id(), offer.level(), MathHelper.clamp(offer.price(), 1, MAX_PRICE)));
+            result.add(new BookOffer(offer.id(), offer.level(), Mth.clamp(offer.price(), 1, MAX_PRICE)));
         }
 
         result.sort(Comparator.naturalOrder());
@@ -208,19 +208,19 @@ public class BookOfferListSetting extends Setting<List<BookOffer>> {
     }
 
     private static List<EnchantmentChoice> getChoices() {
-        if (MeteorClient.mc.world == null) return getFallbackChoices();
+        if (MeteorClient.mc.level == null) return getFallbackChoices();
 
-        var registry = MeteorClient.mc.world.getRegistryManager().getOrThrow(RegistryKeys.ENCHANTMENT);
+        var registry = MeteorClient.mc.level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
         ArrayList<EnchantmentChoice> choices = new ArrayList<>();
 
-        for (var entry : registry.getEntrySet()) {
-            RegistryKey<Enchantment> key = entry.getKey();
+        for (var entry : registry.entrySet()) {
+            ResourceKey<Enchantment> key = entry.getKey();
             Enchantment enchantment = entry.getValue();
 
-            RegistryEntry<Enchantment> ref = registry.getEntry(enchantment);
-            if (!ref.isIn(EnchantmentTags.TRADEABLE)) continue;
+            Holder<Enchantment> ref = registry.wrapAsHolder(enchantment);
+            if (!ref.is(EnchantmentTags.TRADEABLE)) continue;
 
-            String id = key.getValue().toString();
+            String id = key.identifier().toString();
             String name = enchantment.description().getString();
             int maxLevel = Math.max(1, enchantment.getMaxLevel());
             choices.add(new EnchantmentChoice(id, name, maxLevel));

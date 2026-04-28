@@ -12,12 +12,12 @@ import meteordevelopment.meteorclient.utils.network.MeteorExecutor;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.World;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -107,7 +107,7 @@ public class NewChunksModule extends Module {
     private final Set<BlockPos> newChunkReasons = ConcurrentHashMap.newKeySet();
     private final Set<BlockPos> oldChunkReasons = ConcurrentHashMap.newKeySet();
 
-    private RegistryKey<World> lastDimension;
+    private ResourceKey<Level> lastDimension;
 
     public NewChunksModule() {
         super(WurstMeteorAddon.CATEGORY, "new-chunks", "Detects likely new and old chunks using flowing-fluid heuristics.");
@@ -126,15 +126,15 @@ public class NewChunksModule extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (mc.world == null) return;
-        if (lastDimension != mc.world.getRegistryKey()) reset();
+        if (mc.level == null) return;
+        if (lastDimension != mc.level.dimension()) reset();
     }
 
     @EventHandler
     private void onChunkData(ChunkDataEvent event) {
-        if (mc.world == null) return;
+        if (mc.level == null) return;
 
-        WorldChunk chunk = event.chunk();
+        LevelChunk chunk = event.chunk();
         if (chunk == null) return;
 
         ChunkPos chunkPos = chunk.getPos();
@@ -145,23 +145,23 @@ public class NewChunksModule extends Module {
 
     @EventHandler
     private void onBlockUpdate(BlockUpdateEvent event) {
-        if (mc.world == null) return;
+        if (mc.level == null) return;
 
         FluidState fluidState = event.newState.getFluidState();
-        if (fluidState.isEmpty() || fluidState.isStill()) return;
+        if (fluidState.isEmpty() || fluidState.isSource()) return;
 
-        ChunkPos chunkPos = new ChunkPos(event.pos);
+        ChunkPos chunkPos = ChunkPos.containing(event.pos);
         if (newChunks.contains(chunkPos) || oldChunks.contains(chunkPos)) return;
 
         newChunks.add(chunkPos);
-        newChunkReasons.add(event.pos.toImmutable());
+        newChunkReasons.add(event.pos.immutable());
 
-        if (logChunks.get()) info("New chunk at %s, %s", chunkPos.x, chunkPos.z);
+        if (logChunks.get()) info("New chunk at %s, %s", chunkPos.x(), chunkPos.z());
     }
 
     @EventHandler
     private void onRender3D(Render3DEvent event) {
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
         Color newLine = new Color(newChunkColor.get()).a(255);
         Color newSide = new Color(newChunkColor.get()).a((int) (255 * opacity.get()));
@@ -177,7 +177,7 @@ public class NewChunksModule extends Module {
 
             if (showReasons.get()) {
                 for (BlockPos pos : newChunkReasons) {
-                    if (!isInRenderDistance(new ChunkPos(pos))) continue;
+                    if (!isInRenderDistance(ChunkPos.containing(pos))) continue;
                     event.renderer.box(pos, newSide, newLine, ShapeMode.Both, 0);
                 }
             }
@@ -191,7 +191,7 @@ public class NewChunksModule extends Module {
 
             if (showReasons.get()) {
                 for (BlockPos pos : oldChunkReasons) {
-                    if (!isInRenderDistance(new ChunkPos(pos))) continue;
+                    if (!isInRenderDistance(ChunkPos.containing(pos))) continue;
                     event.renderer.box(pos, oldSide, oldLine, ShapeMode.Both, 0);
                 }
             }
@@ -200,10 +200,10 @@ public class NewChunksModule extends Module {
 
     private void renderChunkMarker(Render3DEvent event, ChunkPos chunkPos, Color sideColor, Color lineColor) {
         int y = altitude.get();
-        double minX = chunkPos.getStartX();
-        double maxX = chunkPos.getEndX() + 1;
-        double minZ = chunkPos.getStartZ();
-        double maxZ = chunkPos.getEndZ() + 1;
+        double minX = chunkPos.getMinBlockX();
+        double maxX = chunkPos.getMaxBlockX() + 1;
+        double minZ = chunkPos.getMinBlockZ();
+        double maxZ = chunkPos.getMaxBlockZ() + 1;
 
         if (style.get() == Style.Outline) {
             event.renderer.boxLines(minX, y, minZ, maxX, y + 1, maxZ, lineColor, 0);
@@ -212,26 +212,26 @@ public class NewChunksModule extends Module {
         }
     }
 
-    private void checkLoadedChunk(WorldChunk chunk) {
+    private void checkLoadedChunk(LevelChunk chunk) {
         ChunkPos chunkPos = chunk.getPos();
         if (newChunks.contains(chunkPos) || oldChunks.contains(chunkPos) || dontCheckAgain.contains(chunkPos)) return;
 
-        int minY = mc.world.getBottomY();
-        int maxY = minY + mc.world.getHeight();
+        int minY = mc.level.getMinY();
+        int maxY = minY + mc.level.getHeight();
 
-        BlockPos.Mutable mutable = new BlockPos.Mutable();
-        for (int x = chunkPos.getStartX(); x <= chunkPos.getEndX(); x++) {
-            for (int z = chunkPos.getStartZ(); z <= chunkPos.getEndZ(); z++) {
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+        for (int x = chunkPos.getMinBlockX(); x <= chunkPos.getMaxBlockX(); x++) {
+            for (int z = chunkPos.getMinBlockZ(); z <= chunkPos.getMaxBlockZ(); z++) {
                 for (int y = minY; y < maxY; y++) {
                     mutable.set(x, y, z);
                     FluidState fluidState = chunk.getFluidState(mutable);
 
-                    if (fluidState.isEmpty() || fluidState.isStill()) continue;
+                    if (fluidState.isEmpty() || fluidState.isSource()) continue;
 
                     oldChunks.add(chunkPos);
-                    oldChunkReasons.add(mutable.toImmutable());
+                    oldChunkReasons.add(mutable.immutable());
 
-                    if (logChunks.get()) info("Old chunk at %s, %s", chunkPos.x, chunkPos.z);
+                    if (logChunks.get()) info("Old chunk at %s, %s", chunkPos.x(), chunkPos.z());
                     return;
                 }
             }
@@ -241,10 +241,10 @@ public class NewChunksModule extends Module {
     }
 
     private boolean isInRenderDistance(ChunkPos chunkPos) {
-        ChunkPos playerChunk = mc.player.getChunkPos();
+        ChunkPos playerChunk = ChunkPos.containing(mc.player.blockPosition());
         int dd = drawDistance.get();
 
-        return Math.abs(chunkPos.x - playerChunk.x) <= dd && Math.abs(chunkPos.z - playerChunk.z) <= dd;
+        return Math.abs(chunkPos.x() - playerChunk.x()) <= dd && Math.abs(chunkPos.z() - playerChunk.z()) <= dd;
     }
 
     private void reset() {
@@ -255,7 +255,7 @@ public class NewChunksModule extends Module {
         newChunkReasons.clear();
         oldChunkReasons.clear();
 
-        lastDimension = mc.world == null ? null : mc.world.getRegistryKey();
+        lastDimension = mc.level == null ? null : mc.level.dimension();
     }
 
     public enum Style {

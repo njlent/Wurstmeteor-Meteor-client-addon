@@ -1,6 +1,6 @@
 package de.njlent.wurstmeteor.modules.world.treebot.pathing;
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
 public class TreeBotPathPos extends BlockPos {
     private final boolean jumping;

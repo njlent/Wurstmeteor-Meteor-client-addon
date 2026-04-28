@@ -2,12 +2,12 @@ package de.njlent.wurstmeteor.mixin;
 
 import de.njlent.wurstmeteor.modules.render.BarrierEspModule;
 import meteordevelopment.meteorclient.systems.modules.Modules;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.item.Items;
-import net.minecraft.world.GameMode;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameType;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -15,11 +15,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(ClientWorld.class)
+@Mixin(ClientLevel.class)
 public class ClientWorldMixin {
     @Shadow
     @Final
-    private MinecraftClient client;
+    private Minecraft client;
 
     @Inject(method = "getBlockParticle", at = @At("HEAD"), cancellable = true)
     private void wurstmeteor$onGetBlockParticle(CallbackInfoReturnable<Block> cir) {
@@ -28,10 +28,10 @@ public class ClientWorldMixin {
         BarrierEspModule barrierEsp = Modules.get().get(BarrierEspModule.class);
         if (barrierEsp == null || !barrierEsp.isActive()) return;
 
-        if (client.interactionManager != null
+        if (client.gameMode != null
             && client.player != null
-            && client.interactionManager.getCurrentGameMode() == GameMode.CREATIVE
-            && client.player.getMainHandStack().isOf(Items.LIGHT)) {
+            && client.gameMode.getPlayerMode() == GameType.CREATIVE
+            && client.player.getMainHandItem().is(Items.LIGHT)) {
             return;
         }
 

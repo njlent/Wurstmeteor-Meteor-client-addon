@@ -6,8 +6,8 @@ import meteordevelopment.meteorclient.gui.themes.meteor.MeteorWidget;
 import meteordevelopment.meteorclient.gui.widgets.WWidget;
 import meteordevelopment.meteorclient.gui.widgets.input.WDropdown;
 import meteordevelopment.meteorclient.utils.render.color.Color;
-import net.minecraft.client.gui.Click;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.util.Mth;
 
 import static meteordevelopment.meteorclient.utils.Utils.getWindowHeight;
 import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
@@ -66,7 +66,7 @@ public class ScrollableDropdown<T> extends WDropdown<T> implements MeteorWidget 
         onRender(renderer, mouseX, mouseY, delta);
 
         animProgress += (expanded ? 1 : -1) * delta * 14;
-        animProgress = MathHelper.clamp(animProgress, 0, 1);
+        animProgress = Mth.clamp(animProgress, 0, 1);
 
         if (animProgress > 0) {
             renderer.absolutePost(() -> {
@@ -164,7 +164,7 @@ public class ScrollableDropdown<T> extends WDropdown<T> implements MeteorWidget 
             super.onCalculateWidgetPositions();
 
             if (moveAfterPositionWidgets) {
-                scroll = MathHelper.clamp(scroll, 0, actualHeight - height);
+                scroll = Mth.clamp(scroll, 0, actualHeight - height);
                 targetScroll = scroll;
                 moveCells(0, -scroll);
                 moveAfterPositionWidgets = false;
@@ -172,7 +172,7 @@ public class ScrollableDropdown<T> extends WDropdown<T> implements MeteorWidget 
         }
 
         @Override
-        public boolean onMouseClicked(Click click, boolean doubled) {
+        public boolean onMouseClicked(MouseButtonEvent click, boolean doubled) {
             if (handleMouseOver && click.button() == GLFW_MOUSE_BUTTON_LEFT && !doubled) {
                 draggingHandle = true;
                 return true;
@@ -182,7 +182,7 @@ public class ScrollableDropdown<T> extends WDropdown<T> implements MeteorWidget 
         }
 
         @Override
-        public boolean onMouseReleased(Click click) {
+        public boolean onMouseReleased(MouseButtonEvent click) {
             draggingHandle = false;
             return false;
         }
@@ -205,7 +205,7 @@ public class ScrollableDropdown<T> extends WDropdown<T> implements MeteorWidget 
                 double mouseDelta = mouseY - lastMouseY;
 
                 scroll += Math.round(mouseDelta * ((actualHeight - handleHeight() / 2) / height));
-                scroll = MathHelper.clamp(scroll, 0, actualHeight - height);
+                scroll = Mth.clamp(scroll, 0, actualHeight - height);
                 targetScroll = scroll;
 
                 double delta = scroll - before;
@@ -219,7 +219,7 @@ public class ScrollableDropdown<T> extends WDropdown<T> implements MeteorWidget 
 
             double max = actualHeight - height;
             targetScroll -= Math.round(theme.scale(amount * 40));
-            targetScroll = MathHelper.clamp(targetScroll, 0, max);
+            targetScroll = Mth.clamp(targetScroll, 0, max);
 
             return max > 0;
         }
@@ -269,7 +269,7 @@ public class ScrollableDropdown<T> extends WDropdown<T> implements MeteorWidget 
                 if (scroll < targetScroll) scroll = targetScroll;
             }
 
-            scroll = MathHelper.clamp(scroll, 0, max);
+            scroll = Mth.clamp(scroll, 0, max);
 
             double change = scroll - before;
             if (change != 0) moveCells(0, -change);

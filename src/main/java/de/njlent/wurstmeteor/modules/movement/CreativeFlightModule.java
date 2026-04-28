@@ -12,8 +12,8 @@ import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.systems.modules.movement.Flight;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.player.PlayerAbilities;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.player.Abilities;
+import net.minecraft.world.phys.Vec3;
 
 public class CreativeFlightModule extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -62,11 +62,11 @@ public class CreativeFlightModule extends Module {
     public void onDeactivate() {
         if (mc.player == null) return;
 
-        PlayerAbilities abilities = mc.player.getAbilities();
-        boolean creative = abilities.creativeMode;
+        Abilities abilities = mc.player.getAbilities();
+        boolean creative = abilities.instabuild;
 
-        abilities.flying = creative && !mc.player.isOnGround();
-        abilities.allowFlying = creative;
+        abilities.flying = creative && !mc.player.onGround();
+        abilities.mayfly = creative;
 
         restoreKeyPresses();
     }
@@ -75,8 +75,8 @@ public class CreativeFlightModule extends Module {
     private void onTick(TickEvent.Pre event) {
         if (mc.player == null) return;
 
-        PlayerAbilities abilities = mc.player.getAbilities();
-        abilities.allowFlying = true;
+        Abilities abilities = mc.player.getAbilities();
+        abilities.mayfly = true;
 
         if (antiKick.get() && abilities.flying) doAntiKick();
     }
@@ -86,7 +86,7 @@ public class CreativeFlightModule extends Module {
 
         switch (tickCounter) {
             case 0 -> {
-                if (mc.options.sneakKey.isPressed() && !mc.options.jumpKey.isPressed()) {
+                if (mc.options.keyShift.isDown() && !mc.options.keyJump.isDown()) {
                     tickCounter = 3;
                 } else {
                     setMotionY(-antiKickDistance.get());
@@ -105,15 +105,15 @@ public class CreativeFlightModule extends Module {
     private void setMotionY(double motionY) {
         if (mc.player == null) return;
 
-        mc.options.sneakKey.setPressed(false);
-        mc.options.jumpKey.setPressed(false);
+        mc.options.keyShift.setDown(false);
+        mc.options.keyJump.setDown(false);
 
-        Vec3d velocity = mc.player.getVelocity();
-        mc.player.setVelocity(velocity.x, motionY, velocity.z);
+        Vec3 velocity = mc.player.getDeltaMovement();
+        mc.player.setDeltaMovement(velocity.x, motionY, velocity.z);
     }
 
     private void restoreKeyPresses() {
-        KeyBindingUtils.resetPressedState(mc.options.jumpKey);
-        KeyBindingUtils.resetPressedState(mc.options.sneakKey);
+        KeyBindingUtils.resetPressedState(mc.options.keyJump);
+        KeyBindingUtils.resetPressedState(mc.options.keyShift);
     }
 }

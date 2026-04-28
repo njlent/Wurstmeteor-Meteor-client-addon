@@ -28,12 +28,12 @@ import meteordevelopment.meteorclient.gui.widgets.containers.WTable;
 import meteordevelopment.meteorclient.gui.widgets.containers.WView;
 import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Modules;
-import net.minecraft.item.Items;
+import net.minecraft.world.item.Items;
 import org.slf4j.Logger;
 
 public class WurstMeteorAddon extends MeteorAddon {
     public static final Logger LOG = LogUtils.getLogger();
-    public static final Category CATEGORY = new Category("Wurst", Items.NETHERITE_HOE.getDefaultStack());
+    public static final Category CATEGORY = new Category("Wurst", () -> Items.NETHERITE_HOE.getDefaultInstance());
 
     @Override
     public void onInitialize() {

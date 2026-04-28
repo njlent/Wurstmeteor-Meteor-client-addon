@@ -8,9 +8,9 @@ import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.item.Items;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.Items;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 
 public class CriticalsModule extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -33,19 +33,19 @@ public class CriticalsModule extends Module {
 
     @EventHandler
     private void onAttackEntity(AttackEntityEvent event) {
-        if (mc.player == null || mc.getNetworkHandler() == null) return;
+        if (mc.player == null || mc.getConnection() == null) return;
         if (!(event.entity instanceof LivingEntity)) return;
 
         MaceDmgModule maceDmg = Modules.get().get(MaceDmgModule.class);
-        if (maceDmg != null && maceDmg.isActive() && mc.player.getMainHandStack().isOf(Items.MACE)) return;
+        if (maceDmg != null && maceDmg.isActive() && mc.player.getMainHandItem().is(Items.MACE)) return;
 
-        if (!mc.player.isOnGround()) return;
-        if (mc.player.isSubmergedInWater() || mc.player.isInLava() || mc.player.isClimbing()) return;
+        if (!mc.player.onGround()) return;
+        if (mc.player.isUnderWater() || mc.player.isInLava() || mc.player.onClimbable()) return;
 
         switch (mode.get()) {
             case Packet -> doPacketJump();
             case MiniJump -> doMiniJump();
-            case FullJump -> mc.player.jump();
+            case FullJump -> mc.player.jumpFromGround();
         }
     }
 
@@ -57,7 +57,7 @@ public class CriticalsModule extends Module {
     }
 
     private void sendFakeY(double offset, boolean onGround) {
-        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(
+        mc.getConnection().send(new ServerboundMovePlayerPacket.Pos(
             mc.player.getX(),
             mc.player.getY() + offset,
             mc.player.getZ(),
@@ -67,7 +67,7 @@ public class CriticalsModule extends Module {
     }
 
     private void doMiniJump() {
-        mc.player.addVelocity(0.0, 0.1, 0.0);
+        mc.player.addDeltaMovement(new net.minecraft.world.phys.Vec3(0.0, 0.1, 0.0));
         mc.player.fallDistance = 0.1F;
         mc.player.setOnGround(false);
     }

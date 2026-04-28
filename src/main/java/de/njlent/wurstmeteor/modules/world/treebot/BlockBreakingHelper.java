@@ -1,51 +1,51 @@
 package de.njlent.wurstmeteor.modules.world.treebot;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.RaycastContext;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.level.ClipContext;
 
 public final class BlockBreakingHelper {
     private BlockBreakingHelper() {
     }
 
-    public static BlockBreakingParams getBlockBreakingParams(MinecraftClient mc, BlockPos pos) {
-        return getBlockBreakingParams(mc, mc.player.getEyePos(), pos);
+    public static BlockBreakingParams getBlockBreakingParams(Minecraft mc, BlockPos pos) {
+        return getBlockBreakingParams(mc, mc.player.getEyePosition(), pos);
     }
 
-    public static BlockBreakingParams getBlockBreakingParams(MinecraftClient mc, Vec3d eyes, BlockPos pos) {
+    public static BlockBreakingParams getBlockBreakingParams(Minecraft mc, Vec3 eyes, BlockPos pos) {
         Direction[] sides = Direction.values();
 
-        BlockState state = mc.world.getBlockState(pos);
-        VoxelShape shape = state.getOutlineShape(mc.world, pos);
+        BlockState state = mc.level.getBlockState(pos);
+        VoxelShape shape = state.getShape(mc.level, pos);
         if (shape.isEmpty()) return null;
 
-        var box = shape.getBoundingBox();
-        Vec3d halfSize = new Vec3d(box.maxX - box.minX, box.maxY - box.minY, box.maxZ - box.minZ).multiply(0.5);
-        Vec3d center = Vec3d.of(pos).add(box.getCenter());
+        var box = shape.bounds();
+        Vec3 halfSize = new Vec3(box.maxX - box.minX, box.maxY - box.minY, box.maxZ - box.minZ).scale(0.5);
+        Vec3 center = Vec3.atLowerCornerOf(pos).add(box.getCenter());
 
-        Vec3d[] hitVecs = new Vec3d[sides.length];
+        Vec3[] hitVecs = new Vec3[sides.length];
         for (int i = 0; i < sides.length; i++) {
-            var dirVec = sides[i].getVector();
-            Vec3d relHitVec = new Vec3d(
-                halfSize.x * dirVec.getX(),
-                halfSize.y * dirVec.getY(),
-                halfSize.z * dirVec.getZ()
+            var dirVec = sides[i].step();
+            Vec3 relHitVec = new Vec3(
+                halfSize.x * dirVec.x,
+                halfSize.y * dirVec.y,
+                halfSize.z * dirVec.z
             );
             hitVecs[i] = center.add(relHitVec);
         }
 
-        double distanceSqToCenter = eyes.squaredDistanceTo(center);
+        double distanceSqToCenter = eyes.distanceToSqr(center);
         double[] distancesSq = new double[sides.length];
         boolean[] linesOfSight = new boolean[sides.length];
 
         for (int i = 0; i < sides.length; i++) {
-            distancesSq[i] = eyes.squaredDistanceTo(hitVecs[i]);
+            distancesSq[i] = eyes.distanceToSqr(hitVecs[i]);
 
             if (distancesSq[i] >= distanceSqToCenter) continue;
             linesOfSight[i] = hasLineOfSight(mc, eyes, hitVecs[i]);
@@ -67,12 +67,12 @@ public final class BlockBreakingHelper {
         return new BlockBreakingParams(pos, side, hitVecs[side.ordinal()], distancesSq[side.ordinal()], linesOfSight[side.ordinal()]);
     }
 
-    public static boolean hasLineOfSight(MinecraftClient mc, Vec3d from, Vec3d to) {
-        HitResult hitResult = mc.world.raycast(new RaycastContext(
+    public static boolean hasLineOfSight(Minecraft mc, Vec3 from, Vec3 to) {
+        HitResult hitResult = mc.level.clip(new ClipContext(
             from,
             to,
-            RaycastContext.ShapeType.COLLIDER,
-            RaycastContext.FluidHandling.NONE,
+            ClipContext.Block.COLLIDER,
+            ClipContext.Fluid.NONE,
             mc.player
         ));
 
@@ -82,7 +82,7 @@ public final class BlockBreakingHelper {
     public record BlockBreakingParams(
         BlockPos pos,
         Direction side,
-        Vec3d hitPos,
+        Vec3 hitPos,
         double distanceSq,
         boolean lineOfSight
     ) {

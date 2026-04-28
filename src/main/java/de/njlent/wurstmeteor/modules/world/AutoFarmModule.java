@@ -13,18 +13,19 @@ import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.*;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
-import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
+import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.ClipContext;
 
 import java.util.*;
 
@@ -138,7 +139,7 @@ public class AutoFarmModule extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (mc.player == null || mc.world == null || mc.interactionManager == null) return;
+        if (mc.player == null || mc.level == null || mc.gameMode == null) return;
 
         if (actionDelay > 0) actionDelay--;
 
@@ -195,22 +196,25 @@ public class AutoFarmModule extends Module {
     private void scanHarvestTargets(List<BlockPos> mineList, List<BlockPos> interactList) {
         double rangeSq = range.get() * range.get();
         int blockRange = (int) Math.ceil(range.get());
-        BlockPos center = BlockPos.ofFloored(mc.player.getEyePos());
+        BlockPos center = BlockPos.containing(mc.player.getEyePosition());
 
-        for (BlockPos pos : BlockPos.iterateOutwards(center, blockRange, blockRange, blockRange)) {
-            Vec3d posCenter = pos.toCenterPos();
-            if (mc.player.getEyePos().squaredDistanceTo(posCenter) > rangeSq) continue;
+        for (BlockPos pos : BlockPos.betweenClosed(
+            center.offset(-blockRange, -blockRange, -blockRange),
+            center.offset(blockRange, blockRange, blockRange)
+        )) {
+            Vec3 posCenter = pos.getCenter();
+            if (mc.player.getEyePosition().distanceToSqr(posCenter) > rangeSq) continue;
 
-            BlockState state = mc.world.getBlockState(pos);
+            BlockState state = mc.level.getBlockState(pos);
             if (shouldHarvestByMining(pos, state)) {
-                mineList.add(pos.toImmutable());
+                mineList.add(pos.immutable());
                 Item seed = getReplantSeed(state);
-                if (seed != null) replantingSpots.put(pos.toImmutable(), seed);
+                if (seed != null) replantingSpots.put(pos.immutable(), seed);
                 continue;
             }
 
             if (shouldHarvestByInteracting(state)) {
-                interactList.add(pos.toImmutable());
+                interactList.add(pos.immutable());
             }
         }
     }
@@ -224,13 +228,13 @@ public class AutoFarmModule extends Module {
             BlockPos pos = entry.getKey();
             Item seed = entry.getValue();
 
-            if (!mc.world.isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4)) {
+            if (!mc.level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4)) {
                 iterator.remove();
                 continue;
             }
 
-            BlockState state = mc.world.getBlockState(pos);
-            if (!state.isReplaceable()) {
+            BlockState state = mc.level.getBlockState(pos);
+            if (!state.canBeReplaced()) {
                 if (!shouldHarvestByMining(pos, state)) iterator.remove();
                 continue;
             }
@@ -240,10 +244,10 @@ public class AutoFarmModule extends Module {
                 continue;
             }
 
-            double distanceSq = mc.player.getEyePos().squaredDistanceTo(pos.toCenterPos());
+            double distanceSq = mc.player.getEyePosition().distanceToSqr(pos.getCenter());
             if (distanceSq > rangeSq) continue;
 
-            replantList.add(new ReplantTarget(pos.toImmutable(), seed));
+            replantList.add(new ReplantTarget(pos.immutable(), seed));
         }
     }
 
@@ -261,7 +265,7 @@ public class AutoFarmModule extends Module {
     private boolean tryMine(List<BlockPos> mineList) {
         if (mineList.isEmpty()) return false;
 
-        mineList.sort(Comparator.comparingDouble(pos -> mc.player.getEyePos().squaredDistanceTo(pos.toCenterPos())));
+        mineList.sort(Comparator.comparingDouble(pos -> mc.player.getEyePosition().distanceToSqr(pos.getCenter())));
 
         for (BlockPos pos : mineList) {
             if (checkLos.get() && !hasLineOfSight(pos)) continue;
@@ -274,19 +278,19 @@ public class AutoFarmModule extends Module {
     private boolean tryInteract(List<BlockPos> interactList) {
         if (interactList.isEmpty()) return false;
 
-        interactList.sort(Comparator.comparingDouble(pos -> mc.player.getEyePos().squaredDistanceTo(pos.toCenterPos())));
+        interactList.sort(Comparator.comparingDouble(pos -> mc.player.getEyePosition().distanceToSqr(pos.getCenter())));
 
         for (BlockPos pos : interactList) {
             if (checkLos.get() && !hasLineOfSight(pos)) continue;
 
-            Vec3d hitPos = pos.toCenterPos();
+            Vec3 hitPos = pos.getCenter();
             if (rotate.get()) RotationPackets.face(hitPos);
 
             BlockHitResult hitResult = new BlockHitResult(hitPos, Direction.UP, pos, false);
-            ActionResult result = mc.interactionManager.interactBlock(mc.player, Hand.MAIN_HAND, hitResult);
+            InteractionResult result = mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
 
-            if (result.isAccepted()) {
-                if (swing.get()) mc.player.swingHand(Hand.MAIN_HAND);
+            if (result.consumesAction()) {
+                if (swing.get()) mc.player.swing(InteractionHand.MAIN_HAND);
                 actionDelay = 4;
                 return true;
             }
@@ -298,7 +302,7 @@ public class AutoFarmModule extends Module {
     private boolean tryReplant(List<ReplantTarget> replantList) {
         if (replantList.isEmpty()) return false;
 
-        replantList.sort(Comparator.comparingDouble(target -> mc.player.getEyePos().squaredDistanceTo(target.pos().toCenterPos())));
+        replantList.sort(Comparator.comparingDouble(target -> mc.player.getEyePosition().distanceToSqr(target.pos().getCenter())));
 
         for (ReplantTarget target : replantList) {
             BlockPos pos = target.pos();
@@ -314,18 +318,18 @@ public class AutoFarmModule extends Module {
                 return true;
             }
 
-            Hand hand = findItem.getHand() == null ? Hand.MAIN_HAND : findItem.getHand();
+            InteractionHand hand = findItem.getHand() == null ? InteractionHand.MAIN_HAND : findItem.getHand();
             BlockHitResult hitResult = getReplantHitResult(pos, seed);
             if (hitResult == null) {
                 replantingSpots.remove(pos);
                 continue;
             }
 
-            if (rotate.get()) RotationPackets.face(hitResult.getPos());
-            ActionResult result = mc.interactionManager.interactBlock(mc.player, hand, hitResult);
+            if (rotate.get()) RotationPackets.face(hitResult.getLocation());
+            InteractionResult result = mc.gameMode.useItemOn(mc.player, hand, hitResult);
 
-            if (result.isAccepted()) {
-                if (swing.get()) mc.player.swingHand(hand);
+            if (result.consumesAction()) {
+                if (swing.get()) mc.player.swing(hand);
                 actionDelay = 4;
                 replantingSpots.remove(pos);
                 return true;
@@ -337,58 +341,58 @@ public class AutoFarmModule extends Module {
 
     private BlockHitResult getReplantHitResult(BlockPos pos, Item seed) {
         if (seed == Items.COCOA_BEANS) {
-            for (Direction direction : Direction.Type.HORIZONTAL) {
-                BlockPos logPos = pos.offset(direction);
-                if (mc.world.getBlockState(logPos).isIn(BlockTags.JUNGLE_LOGS)) {
+            for (Direction direction : Direction.Plane.HORIZONTAL) {
+                BlockPos logPos = pos.relative(direction);
+                if (mc.level.getBlockState(logPos).is(BlockTags.JUNGLE_LOGS)) {
                     Direction side = direction.getOpposite();
-                    Vec3d hitPos = logPos.toCenterPos().add(side.getOffsetX() * 0.5, side.getOffsetY() * 0.5, side.getOffsetZ() * 0.5);
+                    Vec3 hitPos = logPos.getCenter().add(side.getStepX() * 0.5, side.getStepY() * 0.5, side.getStepZ() * 0.5);
                     return new BlockHitResult(hitPos, side, logPos, false);
                 }
             }
             return null;
         }
 
-        BlockPos soilPos = pos.down();
-        Vec3d hitPos = soilPos.toCenterPos().add(0.0, 0.5, 0.0);
+        BlockPos soilPos = pos.below();
+        Vec3 hitPos = soilPos.getCenter().add(0.0, 0.5, 0.0);
         return new BlockHitResult(hitPos, Direction.UP, soilPos, false);
     }
 
     private boolean canReplantAt(BlockPos pos, Item seed) {
-        BlockState soil = mc.world.getBlockState(pos.down());
+        BlockState soil = mc.level.getBlockState(pos.below());
 
         if (seed == Items.NETHER_WART) {
-            return soil.isOf(Blocks.SOUL_SAND);
+            return soil.is(Blocks.SOUL_SAND);
         }
 
         if (seed == Items.COCOA_BEANS) {
-            for (Direction direction : Direction.Type.HORIZONTAL) {
-                if (mc.world.getBlockState(pos.offset(direction)).isIn(BlockTags.JUNGLE_LOGS)) return true;
+            for (Direction direction : Direction.Plane.HORIZONTAL) {
+                if (mc.level.getBlockState(pos.relative(direction)).is(BlockTags.JUNGLE_LOGS)) return true;
             }
             return false;
         }
 
-        return isFarmlandSeed(seed) && soil.isOf(Blocks.FARMLAND);
+        return isFarmlandSeed(seed) && soil.is(Blocks.FARMLAND);
     }
 
     private boolean shouldHarvestByMining(BlockPos pos, BlockState state) {
         Block block = state.getBlock();
 
-        if (block instanceof CropBlock crop && crop.isMature(state)) return true;
+        if (block instanceof CropBlock crop && crop.isMaxAge(state)) return true;
 
-        if (block == Blocks.NETHER_WART && state.contains(NetherWartBlock.AGE)) {
-            return state.get(NetherWartBlock.AGE) >= NetherWartBlock.MAX_AGE;
+        if (block == Blocks.NETHER_WART && state.hasProperty(NetherWartBlock.AGE)) {
+            return state.getValue(NetherWartBlock.AGE) >= NetherWartBlock.MAX_AGE;
         }
 
-        if (block == Blocks.COCOA && state.contains(CocoaBlock.AGE)) {
-            return state.get(CocoaBlock.AGE) >= CocoaBlock.MAX_AGE;
+        if (block == Blocks.COCOA && state.hasProperty(CocoaBlock.AGE)) {
+            return state.getValue(CocoaBlock.AGE) >= CocoaBlock.MAX_AGE;
         }
 
         if (block == Blocks.MELON || block == Blocks.PUMPKIN) return true;
-        if (block == Blocks.SUGAR_CANE) return mc.world.getBlockState(pos.down()).isOf(Blocks.SUGAR_CANE);
-        if (block == Blocks.CACTUS) return mc.world.getBlockState(pos.down()).isOf(Blocks.CACTUS);
-        if (block == Blocks.BAMBOO) return mc.world.getBlockState(pos.down()).isOf(Blocks.BAMBOO);
-        if (block == Blocks.KELP_PLANT) return mc.world.getBlockState(pos.down()).isOf(Blocks.KELP_PLANT) || mc.world.getBlockState(pos.down()).isOf(Blocks.KELP);
-        if (block == Blocks.KELP) return mc.world.getBlockState(pos.down()).isOf(Blocks.KELP_PLANT);
+        if (block == Blocks.SUGAR_CANE) return mc.level.getBlockState(pos.below()).is(Blocks.SUGAR_CANE);
+        if (block == Blocks.CACTUS) return mc.level.getBlockState(pos.below()).is(Blocks.CACTUS);
+        if (block == Blocks.BAMBOO) return mc.level.getBlockState(pos.below()).is(Blocks.BAMBOO);
+        if (block == Blocks.KELP_PLANT) return mc.level.getBlockState(pos.below()).is(Blocks.KELP_PLANT) || mc.level.getBlockState(pos.below()).is(Blocks.KELP);
+        if (block == Blocks.KELP) return mc.level.getBlockState(pos.below()).is(Blocks.KELP_PLANT);
 
         return false;
     }
@@ -396,11 +400,11 @@ public class AutoFarmModule extends Module {
     private boolean shouldHarvestByInteracting(BlockState state) {
         Block block = state.getBlock();
 
-        if (block == Blocks.SWEET_BERRY_BUSH && state.contains(SweetBerryBushBlock.AGE)) {
-            return state.get(SweetBerryBushBlock.AGE) >= 3;
+        if (block == Blocks.SWEET_BERRY_BUSH && state.hasProperty(SweetBerryBushBlock.AGE)) {
+            return state.getValue(SweetBerryBushBlock.AGE) >= 3;
         }
 
-        return CaveVines.hasBerries(state);
+        return CaveVines.hasGlowBerries(state);
     }
 
     private Item getReplantSeed(BlockState state) {
@@ -426,14 +430,14 @@ public class AutoFarmModule extends Module {
     }
 
     private boolean hasLineOfSight(BlockPos pos) {
-        Vec3d eyes = mc.player.getEyePos();
-        Vec3d target = pos.toCenterPos();
+        Vec3 eyes = mc.player.getEyePosition();
+        Vec3 target = pos.getCenter();
 
-        HitResult hit = mc.world.raycast(new RaycastContext(
+        HitResult hit = mc.level.clip(new ClipContext(
             eyes,
             target,
-            RaycastContext.ShapeType.COLLIDER,
-            RaycastContext.FluidHandling.NONE,
+            ClipContext.Block.COLLIDER,
+            ClipContext.Fluid.NONE,
             mc.player
         ));
 

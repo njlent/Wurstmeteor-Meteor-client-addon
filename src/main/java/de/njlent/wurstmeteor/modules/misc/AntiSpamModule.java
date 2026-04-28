@@ -2,14 +2,14 @@ package de.njlent.wurstmeteor.modules.misc;
 
 import de.njlent.wurstmeteor.WurstMeteorAddon;
 import meteordevelopment.meteorclient.events.game.ReceiveMessageEvent;
-import meteordevelopment.meteorclient.mixin.ChatHudAccessor;
+import meteordevelopment.meteorclient.mixin.ChatComponentAccessor;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.gui.hud.ChatHud;
-import net.minecraft.client.gui.hud.ChatHudLine;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.OrderedText;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.components.ChatComponent;
+import net.minecraft.client.multiplayer.chat.GuiMessage;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.network.chat.Component;
 
 import java.util.List;
 
@@ -20,14 +20,14 @@ public class AntiSpamModule extends Module {
 
     @EventHandler
     private void onReceiveMessage(ReceiveMessageEvent event) {
-        if (mc.inGameHud == null || mc.textRenderer == null) return;
+        if (mc.gui == null || mc.font == null) return;
 
-        ChatHud chatHud = mc.inGameHud.getChatHud();
-        List<ChatHudLine.Visible> chatLines = ((ChatHudAccessor) chatHud).meteor$getVisibleMessages();
+        ChatComponent chatHud = mc.gui.getChat();
+        List<GuiMessage.Line> chatLines = ((ChatComponentAccessor) chatHud).meteor$getTrimmedMessages();
         if (chatLines.isEmpty()) return;
 
-        int maxTextLength = (int) Math.floor(ChatHud.getWidth(mc.options.getChatWidth().getValue()) / mc.options.getChatScale().getValue());
-        List<OrderedText> newLines = mc.textRenderer.wrapLines(event.getMessage(), maxTextLength);
+        int maxTextLength = (int) Math.floor(ChatComponent.getWidth(mc.options.chatWidth().get()) / mc.options.chatScale().get());
+        List<FormattedCharSequence> newLines = mc.font.split(event.getMessage(), maxTextLength);
         if (newLines.isEmpty()) return;
 
         int spamCounter = 1;
@@ -95,13 +95,13 @@ public class AntiSpamModule extends Module {
         }
 
         if (spamCounter > 1) {
-            Text oldText = event.getMessage();
-            MutableText newText = Text.empty().append(oldText.copy());
+            Component oldText = event.getMessage();
+            MutableComponent newText = Component.empty().append(oldText.copy());
             event.setMessage(newText.append(" [x" + spamCounter + "]"));
         }
     }
 
-    private static String toPlainString(OrderedText orderedText) {
+    private static String toPlainString(FormattedCharSequence orderedText) {
         StringBuilder sb = new StringBuilder();
         orderedText.accept((index, style, codePoint) -> {
             sb.appendCodePoint(codePoint);

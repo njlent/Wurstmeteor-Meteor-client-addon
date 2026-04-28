@@ -10,14 +10,14 @@ import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.gui.Element;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.gui.screen.ingame.InventoryScreen;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.item.ItemGroups;
-import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.client.KeyMapping;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,42 +65,42 @@ public class InvWalkModule extends Module {
     private void onTick(TickEvent.Pre event) {
         if (mc.player == null) return;
 
-        Screen screen = mc.currentScreen;
+        Screen screen = mc.screen;
         if (screen == null) return;
         if (!isAllowedScreen(screen)) return;
 
-        ArrayList<KeyBinding> keys = new ArrayList<>(Arrays.asList(
-            mc.options.forwardKey,
-            mc.options.backKey,
-            mc.options.leftKey,
-            mc.options.rightKey
+        ArrayList<KeyMapping> keys = new ArrayList<>(Arrays.asList(
+            mc.options.keyUp,
+            mc.options.keyDown,
+            mc.options.keyLeft,
+            mc.options.keyRight
         ));
 
-        if (allowSneak.get()) keys.add(mc.options.sneakKey);
-        if (allowSprint.get()) keys.add(mc.options.sprintKey);
-        if (allowJump.get()) keys.add(mc.options.jumpKey);
+        if (allowSneak.get()) keys.add(mc.options.keyShift);
+        if (allowSprint.get()) keys.add(mc.options.keySprint);
+        if (allowJump.get()) keys.add(mc.options.keyJump);
 
-        for (KeyBinding key : keys) KeyBindingUtils.resetPressedState(key);
+        for (KeyMapping key : keys) KeyBindingUtils.resetPressedState(key);
     }
 
     private boolean isAllowedScreen(Screen screen) {
-        if ((screen instanceof InventoryScreen || screen instanceof CreativeInventoryScreen) && !isCreativeSearchBarOpen(screen)) {
+        if ((screen instanceof InventoryScreen || screen instanceof CreativeModeInventoryScreen) && !isCreativeSearchBarOpen(screen)) {
             return true;
         }
 
         if (allowClickGui.get() && screen instanceof WidgetScreen) return true;
 
-        return allowOther.get() && screen instanceof HandledScreen<?> && !hasTextBox(screen);
+        return allowOther.get() && screen instanceof AbstractContainerScreen<?> && !hasTextBox(screen);
     }
 
     private boolean isCreativeSearchBarOpen(Screen screen) {
-        if (!(screen instanceof CreativeInventoryScreen)) return false;
-        return CreativeInventoryScreenAccessor.wurstmeteor$getSelectedTab() == ItemGroups.getSearchGroup();
+        if (!(screen instanceof CreativeModeInventoryScreen)) return false;
+        return CreativeInventoryScreenAccessor.wurstmeteor$getSelectedTab() == CreativeModeTabs.searchTab();
     }
 
     private boolean hasTextBox(Screen screen) {
-        for (Element child : screen.children()) {
-            if (child instanceof TextFieldWidget) return true;
+        for (GuiEventListener child : screen.children()) {
+            if (child instanceof EditBox) return true;
         }
 
         return false;

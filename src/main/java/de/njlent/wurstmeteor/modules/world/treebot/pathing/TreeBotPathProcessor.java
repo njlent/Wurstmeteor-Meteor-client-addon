@@ -1,22 +1,22 @@
 package de.njlent.wurstmeteor.modules.world.treebot.pathing;
 
 import de.njlent.wurstmeteor.util.KeyBindingUtils;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 
 public abstract class TreeBotPathProcessor {
-    protected final MinecraftClient mc;
+    protected final Minecraft mc;
 
     protected final ArrayList<TreeBotPathPos> path;
     protected int index;
     protected boolean done;
     protected int ticksOffPath;
 
-    protected TreeBotPathProcessor(MinecraftClient mc, ArrayList<TreeBotPathPos> path) {
+    protected TreeBotPathProcessor(Minecraft mc, ArrayList<TreeBotPathPos> path) {
         if (path.isEmpty()) throw new IllegalStateException("There is no path!");
 
         this.mc = mc;
@@ -40,26 +40,26 @@ public abstract class TreeBotPathProcessor {
     }
 
     protected void facePosition(BlockPos pos) {
-        Vec3d eyes = mc.player.getEyePos();
-        Vec3d target = Vec3d.ofCenter(pos);
+        Vec3 eyes = mc.player.getEyePosition();
+        Vec3 target = Vec3.atCenterOf(pos);
 
         double xDiff = target.x - eyes.x;
         double zDiff = target.z - eyes.z;
         float yaw = (float) (Math.toDegrees(Math.atan2(zDiff, xDiff)) - 90.0F);
 
-        mc.player.setYaw(yaw);
-        mc.player.setHeadYaw(yaw);
-        mc.player.setBodyYaw(yaw);
+        mc.player.setYRot(yaw);
+        mc.player.setYHeadRot(yaw);
+        mc.player.setYBodyRot(yaw);
     }
 
-    protected float getHorizontalAngleTo(Vec3d lookVec) {
-        Vec3d eyes = mc.player.getEyePos();
+    protected float getHorizontalAngleTo(Vec3 lookVec) {
+        Vec3 eyes = mc.player.getEyePosition();
 
         double xDiff = lookVec.x - eyes.x;
         double zDiff = lookVec.z - eyes.z;
         float yaw = (float) (Math.toDegrees(Math.atan2(zDiff, xDiff)) - 90.0F);
 
-        return yaw - mc.player.getYaw();
+        return yaw - mc.player.getYRot();
     }
 
     protected int indexOfPos(BlockPos pos) {
@@ -70,23 +70,23 @@ public abstract class TreeBotPathProcessor {
         return -1;
     }
 
-    public static void lockControls(MinecraftClient mc) {
-        getControls(mc).forEach(key -> key.setPressed(false));
+    public static void lockControls(Minecraft mc) {
+        getControls(mc).forEach(key -> key.setDown(false));
         mc.player.setSprinting(false);
     }
 
-    public static void releaseControls(MinecraftClient mc) {
+    public static void releaseControls(Minecraft mc) {
         getControls(mc).forEach(KeyBindingUtils::resetPressedState);
     }
 
-    private static ArrayList<KeyBinding> getControls(MinecraftClient mc) {
-        ArrayList<KeyBinding> controls = new ArrayList<>(6);
-        controls.add(mc.options.forwardKey);
-        controls.add(mc.options.backKey);
-        controls.add(mc.options.rightKey);
-        controls.add(mc.options.leftKey);
-        controls.add(mc.options.jumpKey);
-        controls.add(mc.options.sneakKey);
+    private static ArrayList<KeyMapping> getControls(Minecraft mc) {
+        ArrayList<KeyMapping> controls = new ArrayList<>(6);
+        controls.add(mc.options.keyUp);
+        controls.add(mc.options.keyDown);
+        controls.add(mc.options.keyRight);
+        controls.add(mc.options.keyLeft);
+        controls.add(mc.options.keyJump);
+        controls.add(mc.options.keyShift);
         return controls;
     }
 }

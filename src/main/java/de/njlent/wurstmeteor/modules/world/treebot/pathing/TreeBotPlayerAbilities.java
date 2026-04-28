@@ -5,8 +5,8 @@ import meteordevelopment.meteorclient.systems.modules.movement.Flight;
 import meteordevelopment.meteorclient.systems.modules.movement.Jesus;
 import meteordevelopment.meteorclient.systems.modules.movement.NoFall;
 import meteordevelopment.meteorclient.systems.modules.movement.Spider;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.player.PlayerAbilities;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.player.Abilities;
 
 public record TreeBotPlayerAbilities(
     boolean invulnerable,
@@ -17,7 +17,7 @@ public record TreeBotPlayerAbilities(
     boolean jesus,
     boolean spider
 ) {
-    public static TreeBotPlayerAbilities get(MinecraftClient mc) {
+    public static TreeBotPlayerAbilities get(Minecraft mc) {
         Modules modules = Modules.get();
 
         boolean flight = modules != null && modules.get(Flight.class).isActive();
@@ -25,9 +25,9 @@ public record TreeBotPlayerAbilities(
         boolean jesus = modules != null && modules.get(Jesus.class).isActive();
         boolean spider = modules != null && modules.get(Spider.class).isActive();
 
-        PlayerAbilities mcAbilities = mc.player.getAbilities();
+        Abilities mcAbilities = mc.player.getAbilities();
 
-        boolean invulnerable = mcAbilities.invulnerable || mcAbilities.creativeMode;
+        boolean invulnerable = mcAbilities.invulnerable || mcAbilities.instabuild;
         boolean creativeFlying = mcAbilities.flying;
         boolean flying = creativeFlying || flight;
         boolean immuneToFallDamage = invulnerable || noFall;
