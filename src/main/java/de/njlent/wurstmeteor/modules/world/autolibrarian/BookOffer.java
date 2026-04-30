@@ -1,9 +1,10 @@
 package de.njlent.wurstmeteor.modules.world.autolibrarian;
 
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.util.Identifier;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.Identifier;
 
 import java.util.Optional;
 
@@ -30,15 +31,15 @@ public record BookOffer(String id, int level, int price) implements Comparable<B
         return Identifier.tryParse(id) != null && level >= 1 && price >= 1 && price <= 64;
     }
 
-    public boolean isFullyValid(net.minecraft.registry.DynamicRegistryManager registryManager) {
+    public boolean isFullyValid(RegistryAccess registryManager) {
         if (!isMostlyValid() || registryManager == null) return false;
 
-        var registry = registryManager.getOrThrow(RegistryKeys.ENCHANTMENT);
-        Optional<RegistryEntry.Reference<Enchantment>> optional = registry.getEntry(Identifier.of(id));
+        var registry = registryManager.lookupOrThrow(Registries.ENCHANTMENT);
+        Optional<Holder.Reference<Enchantment>> optional = registry.get(Identifier.parse(id));
         if (optional.isEmpty()) return false;
 
-        RegistryEntry<Enchantment> entry = optional.get();
-        if (!entry.isIn(net.minecraft.registry.tag.EnchantmentTags.TRADEABLE)) return false;
+        Holder<Enchantment> entry = optional.get();
+        if (!entry.is(net.minecraft.tags.EnchantmentTags.TRADEABLE)) return false;
         return level <= entry.value().getMaxLevel();
     }
 
@@ -50,9 +51,9 @@ public record BookOffer(String id, int level, int price) implements Comparable<B
         return price + " emerald" + (price == 1 ? "" : "s");
     }
 
-    public String nameWithLevel(net.minecraft.registry.DynamicRegistryManager registryManager) {
-        var registry = registryManager.getOrThrow(RegistryKeys.ENCHANTMENT);
-        Optional<RegistryEntry.Reference<Enchantment>> optional = registry.getEntry(Identifier.of(id));
+    public String nameWithLevel(RegistryAccess registryManager) {
+        var registry = registryManager.lookupOrThrow(Registries.ENCHANTMENT);
+        Optional<Holder.Reference<Enchantment>> optional = registry.get(Identifier.parse(id));
         if (optional.isEmpty()) return id + " " + level;
 
         Enchantment enchantment = optional.get().value();

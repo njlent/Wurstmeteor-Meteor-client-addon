@@ -1,14 +1,14 @@
 package de.njlent.wurstmeteor.mixin;
 
-import net.minecraft.client.gui.screen.ingame.CreativeInventoryScreen;
-import net.minecraft.item.ItemGroup;
+import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
+import net.minecraft.world.item.CreativeModeTab;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin(CreativeInventoryScreen.class)
+@Mixin(CreativeModeInventoryScreen.class)
 public interface CreativeInventoryScreenAccessor {
     @Accessor("selectedTab")
-    static ItemGroup wurstmeteor$getSelectedTab() {
+    static CreativeModeTab wurstmeteor$getSelectedTab() {
         throw new AssertionError();
     }
 }

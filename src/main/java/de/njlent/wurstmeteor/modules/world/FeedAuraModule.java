@@ -10,16 +10,16 @@ import meteordevelopment.meteorclient.utils.entity.Target;
 import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.passive.AbstractHorseEntity;
-import net.minecraft.entity.passive.AnimalEntity;
-import net.minecraft.entity.passive.TameableEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.animal.equine.AbstractHorse;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,13 +67,13 @@ public class FeedAuraModule extends Module {
 
     private final Setting<HandMode> hand = sgGeneral.add(new EnumSetting.Builder<HandMode>()
         .name("hand")
-        .description("Hand used for feeding.")
+        .description("InteractionHand used for feeding.")
         .defaultValue(HandMode.Main)
         .build()
     );
 
     private final Random random = new Random();
-    private AnimalEntity renderTarget;
+    private Animal renderTarget;
 
     public FeedAuraModule() {
         super(WurstMeteorAddon.CATEGORY, "feed-aura", "Automatically feeds nearby breedable animals.");
@@ -86,23 +86,23 @@ public class FeedAuraModule extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (mc.player == null || mc.world == null || mc.interactionManager == null) return;
-        if (mc.interactionManager.isBreakingBlock() || mc.player.isUsingItem()) return;
+        if (mc.player == null || mc.level == null || mc.gameMode == null) return;
+        if (mc.gameMode.isDestroying() || mc.player.isUsingItem()) return;
 
-        Hand usedHand = hand.get().toMinecraft();
-        ItemStack held = usedHand == Hand.MAIN_HAND ? mc.player.getMainHandStack() : mc.player.getOffHandStack();
+        InteractionHand usedHand = hand.get().toMinecraft();
+        ItemStack held = usedHand == InteractionHand.MAIN_HAND ? mc.player.getMainHandItem() : mc.player.getOffhandItem();
         if (held.isEmpty()) {
             renderTarget = null;
             return;
         }
 
-        List<AnimalEntity> targets = collectTargets(held);
+        List<Animal> targets = collectTargets(held);
         if (targets.isEmpty()) {
             renderTarget = null;
             return;
         }
 
-        AnimalEntity target = targets.get(random.nextInt(targets.size()));
+        Animal target = targets.get(random.nextInt(targets.size()));
         renderTarget = target;
 
         if (rotate.get()) {
@@ -125,26 +125,26 @@ public class FeedAuraModule extends Module {
         Color side = new Color(red, green, 0, 40);
         Color line = new Color(red, green, 0, 130);
 
-        double x = MathHelper.lerp(event.tickDelta, renderTarget.lastRenderX, renderTarget.getX()) - renderTarget.getX();
-        double y = MathHelper.lerp(event.tickDelta, renderTarget.lastRenderY, renderTarget.getY()) - renderTarget.getY();
-        double z = MathHelper.lerp(event.tickDelta, renderTarget.lastRenderZ, renderTarget.getZ()) - renderTarget.getZ();
+        double x = Mth.lerp(event.tickDelta, renderTarget.xOld, renderTarget.getX()) - renderTarget.getX();
+        double y = Mth.lerp(event.tickDelta, renderTarget.yOld, renderTarget.getY()) - renderTarget.getY();
+        double z = Mth.lerp(event.tickDelta, renderTarget.zOld, renderTarget.getZ()) - renderTarget.getZ();
 
-        Box box = renderTarget.getBoundingBox().offset(x, y, z);
+        AABB box = renderTarget.getBoundingBox().move(x, y, z);
         event.renderer.box(box, side, line, ShapeMode.Both, 0);
     }
 
-    private List<AnimalEntity> collectTargets(ItemStack held) {
+    private List<Animal> collectTargets(ItemStack held) {
         double rangeSq = range.get() * range.get();
-        List<AnimalEntity> targets = new ArrayList<>();
+        List<Animal> targets = new ArrayList<>();
 
-        for (Entity entity : mc.world.getEntities()) {
-            if (!(entity instanceof AnimalEntity animal)) continue;
-            if (mc.player.squaredDistanceTo(animal) > rangeSq) continue;
-            if (!animal.isBreedingItem(held)) continue;
-            if (!animal.canEat()) continue;
+        for (Entity entity : mc.level.entitiesForRendering()) {
+            if (!(entity instanceof Animal animal)) continue;
+            if (mc.player.distanceToSqr(animal) > rangeSq) continue;
+            if (!animal.isFood(held)) continue;
+            if (!animal.canFallInLove()) continue;
             if (ignoreBabies.get() && animal.isBaby()) continue;
             if (filterUntamed.get() && isUntamed(animal)) continue;
-            if (filterHorseLike.get() && animal instanceof AbstractHorseEntity) continue;
+            if (filterHorseLike.get() && animal instanceof AbstractHorse) continue;
 
             targets.add(animal);
         }
@@ -152,32 +152,31 @@ public class FeedAuraModule extends Module {
         return targets;
     }
 
-    private void feed(AnimalEntity target, Hand hand) {
+    private void feed(Animal target, InteractionHand hand) {
         if (!target.isAlive()) return;
 
         EntityHitResult hitResult = new EntityHitResult(target, target.getBoundingBox().getCenter());
-        ActionResult result = mc.interactionManager.interactEntityAtLocation(mc.player, target, hitResult, hand);
-        if (!result.isAccepted()) result = mc.interactionManager.interactEntity(mc.player, target, hand);
+        InteractionResult result = mc.gameMode.interact(mc.player, target, hitResult, hand);
 
-        if (result.isAccepted()) mc.player.swingHand(hand);
+        if (result.consumesAction()) mc.player.swing(hand);
     }
 
-    private boolean isUntamed(AnimalEntity animal) {
-        if (animal instanceof AbstractHorseEntity horse && !horse.isTame()) return true;
-        return animal instanceof TameableEntity tameable && tameable.getOwner() == null;
+    private boolean isUntamed(Animal animal) {
+        if (animal instanceof AbstractHorse horse && !horse.isTamed()) return true;
+        return animal instanceof TamableAnimal tameable && tameable.getOwner() == null;
     }
 
     public enum HandMode {
-        Main(Hand.MAIN_HAND),
-        Off(Hand.OFF_HAND);
+        Main(InteractionHand.MAIN_HAND),
+        Off(InteractionHand.OFF_HAND);
 
-        private final Hand hand;
+        private final InteractionHand hand;
 
-        HandMode(Hand hand) {
+        HandMode(InteractionHand hand) {
             this.hand = hand;
         }
 
-        public Hand toMinecraft() {
+        public InteractionHand toMinecraft() {
             return hand;
         }
     }

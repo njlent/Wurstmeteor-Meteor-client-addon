@@ -1,7 +1,7 @@
 {
   "required": false,
   "package": "de.njlent.wurstmeteor.mixin",
-  "compatibilityLevel": "JAVA_21",
+  "compatibilityLevel": "JAVA_25",
   "client": [
     "ClientWorldMixin",
     "CreativeInventoryScreenAccessor",

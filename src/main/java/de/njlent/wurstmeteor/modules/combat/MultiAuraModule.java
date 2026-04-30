@@ -8,13 +8,13 @@ import meteordevelopment.meteorclient.systems.friends.Friends;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.player.PlayerUtils;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -126,9 +126,9 @@ public class MultiAuraModule extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (mc.player == null || mc.world == null || mc.interactionManager == null) return;
-        if (pauseInContainers.get() && mc.currentScreen instanceof HandledScreen<?>) return;
-        if (pauseOnUse.get() && (mc.player.isUsingItem() || mc.interactionManager.isBreakingBlock())) return;
+        if (mc.player == null || mc.level == null || mc.gameMode == null) return;
+        if (pauseInContainers.get() && mc.screen instanceof AbstractContainerScreen<?>) return;
+        if (pauseOnUse.get() && (mc.player.isUsingItem() || mc.gameMode.isDestroying())) return;
 
         long now = System.currentTimeMillis();
         long delayMs = Math.max(1L, (long) (1000.0 / attacksPerSecond.get()));
@@ -141,10 +141,10 @@ public class MultiAuraModule extends Module {
         for (int i = 0; i < attacks; i++) {
             Entity target = targets.get(i);
             if (rotate.get()) RotationPackets.face(target.getBoundingBox().getCenter());
-            mc.interactionManager.attackEntity(mc.player, target);
+            mc.gameMode.attack(mc.player, target);
         }
 
-        if (swing.get()) mc.player.swingHand(Hand.MAIN_HAND);
+        if (swing.get()) mc.player.swing(InteractionHand.MAIN_HAND);
         nextAttackTime = now + delayMs;
     }
 
@@ -153,14 +153,14 @@ public class MultiAuraModule extends Module {
         double wallsRangeSq = wallsRange.get() * wallsRange.get();
 
         List<Entity> targets = new ArrayList<>();
-        for (Entity entity : mc.world.getEntities()) {
+        for (Entity entity : mc.level.entitiesForRendering()) {
             if (!(entity instanceof LivingEntity livingEntity)) continue;
             if (!livingEntity.isAlive()) continue;
             if (entity == mc.player) continue;
             if (!entities.get().contains(entity.getType())) continue;
-            if (ignoreFriends.get() && entity instanceof PlayerEntity player && Friends.get().isFriend(player)) continue;
+            if (ignoreFriends.get() && entity instanceof Player player && Friends.get().isFriend(player)) continue;
 
-            double distanceSq = mc.player.squaredDistanceTo(entity);
+            double distanceSq = mc.player.distanceToSqr(entity);
             if (distanceSq > rangeSq) continue;
 
             if (!PlayerUtils.canSeeEntity(entity) && distanceSq > wallsRangeSq) continue;
@@ -169,7 +169,7 @@ public class MultiAuraModule extends Module {
             targets.add(entity);
         }
 
-        targets.sort(Comparator.comparingDouble(mc.player::squaredDistanceTo));
+        targets.sort(Comparator.comparingDouble(mc.player::distanceToSqr));
         return targets;
     }
 
@@ -177,10 +177,10 @@ public class MultiAuraModule extends Module {
         double fovValue = fov.get();
         if (fovValue >= 360.0) return true;
 
-        Vec3d look = mc.player.getRotationVec(1.0F).normalize();
-        Vec3d toTarget = entity.getBoundingBox().getCenter().subtract(mc.player.getEyePos()).normalize();
+        Vec3 look = mc.player.getLookAngle().normalize();
+        Vec3 toTarget = entity.getBoundingBox().getCenter().subtract(mc.player.getEyePosition()).normalize();
 
-        double dot = look.dotProduct(toTarget);
+        double dot = look.dot(toTarget);
         dot = Math.max(-1.0, Math.min(1.0, dot));
         double angle = Math.toDegrees(Math.acos(dot));
 

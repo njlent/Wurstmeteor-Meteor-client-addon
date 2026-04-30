@@ -8,11 +8,11 @@ import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
-import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.world.phys.Vec3;
 
 public class ArrowDmgModule extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -40,17 +40,17 @@ public class ArrowDmgModule extends Module {
 
     @EventHandler
     private void onStoppedUsingItem(StoppedUsingItemEvent event) {
-        if (mc.player == null || mc.getNetworkHandler() == null) return;
-        if (!isValidItem(mc.player.getMainHandStack().getItem())) return;
+        if (mc.player == null || mc.getConnection() == null) return;
+        if (!isValidItem(mc.player.getMainHandItem().getItem())) return;
 
-        mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.START_SPRINTING));
+        mc.getConnection().send(new ServerboundPlayerCommandPacket(mc.player, ServerboundPlayerCommandPacket.Action.START_SPRINTING));
 
         double x = mc.player.getX();
         double y = mc.player.getY();
         double z = mc.player.getZ();
 
         double adjustedStrength = strength.get() / 10.0 * Math.sqrt(500.0);
-        Vec3d lookVec = mc.player.getRotationVec(1.0F).multiply(adjustedStrength);
+        Vec3 lookVec = mc.player.getLookAngle().scale(adjustedStrength);
 
         for (int i = 0; i < 4; i++) sendPos(x, y, z, true);
 
@@ -59,9 +59,9 @@ public class ArrowDmgModule extends Module {
     }
 
     private void sendPos(double x, double y, double z, boolean onGround) {
-        if (mc.getNetworkHandler() == null || mc.player == null) return;
+        if (mc.getConnection() == null || mc.player == null) return;
 
-        mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(
+        mc.getConnection().send(new ServerboundMovePlayerPacket.Pos(
             x,
             y,
             z,

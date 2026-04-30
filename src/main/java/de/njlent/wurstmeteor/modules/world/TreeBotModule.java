@@ -10,7 +10,7 @@ import de.njlent.wurstmeteor.modules.world.treebot.pathing.TreeBotPathProcessor;
 import de.njlent.wurstmeteor.util.RotationPackets;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
-import meteordevelopment.meteorclient.mixin.ClientPlayerInteractionManagerAccessor;
+import meteordevelopment.meteorclient.mixin.MultiPlayerGameModeAccessor;
 import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.settings.DoubleSetting;
 import meteordevelopment.meteorclient.settings.EnumSetting;
@@ -22,13 +22,13 @@ import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.meteorclient.utils.player.PlayerUtils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.BlockState;
-import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.network.protocol.game.ServerboundSwingPacket;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -92,11 +92,11 @@ public class TreeBotModule extends Module {
 
     @Override
     public void onDeactivate() {
-        if (mc.player != null && mc.world != null && mc.interactionManager != null) {
+        if (mc.player != null && mc.level != null && mc.gameMode != null) {
             TreeBotPathProcessor.releaseControls(mc);
 
             if (currentBlock != null) {
-                mc.interactionManager.cancelBlockBreaking();
+                mc.gameMode.stopDestroyBlock();
                 currentBlock = null;
             }
         }
@@ -120,7 +120,7 @@ public class TreeBotModule extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (mc.player == null || mc.world == null || mc.interactionManager == null) return;
+        if (mc.player == null || mc.level == null || mc.gameMode == null) return;
 
         if (treeFinder != null) {
             goToTree();
@@ -132,7 +132,7 @@ public class TreeBotModule extends Module {
             return;
         }
 
-        tree.logs().removeIf(Predicate.not(pos -> TreeBotUtils.isLog(mc.world.getBlockState(pos))));
+        tree.logs().removeIf(Predicate.not(pos -> TreeBotUtils.isLog(mc.level.getBlockState(pos))));
 
         if (tree.logs().isEmpty()) {
             tree = null;
@@ -150,7 +150,7 @@ public class TreeBotModule extends Module {
 
     @EventHandler
     private void onRender(Render3DEvent event) {
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
         if (tree != null) tree.render(event);
         renderProgress(event);
@@ -207,22 +207,22 @@ public class TreeBotModule extends Module {
         faceTarget.get().face(mc, params.hitPos());
 
         boolean updated;
-        if (mc.interactionManager.isBreakingBlock()) {
-            updated = mc.interactionManager.updateBlockBreakingProgress(pos, params.side());
+        if (mc.gameMode.isDestroying()) {
+            updated = mc.gameMode.continueDestroyBlock(pos, params.side());
         } else {
-            updated = mc.interactionManager.attackBlock(pos, params.side());
+            updated = mc.gameMode.startDestroyBlock(pos, params.side());
         }
 
-        if (updated) swingHand.get().swing(mc, Hand.MAIN_HAND);
+        if (updated) swingHand.get().swing(mc, InteractionHand.MAIN_HAND);
         updateProgress();
 
         return true;
     }
 
     private void equipBestTool(BlockPos pos) {
-        if (mc.player.getAbilities().creativeMode) return;
+        if (mc.player.getAbilities().instabuild) return;
 
-        FindItemResult bestTool = InvUtils.findFastestTool(mc.world.getBlockState(pos));
+        FindItemResult bestTool = InvUtils.findFastestTool(mc.level.getBlockState(pos));
         if (!bestTool.found()) return;
         if (bestTool.isMainHand() || bestTool.isOffhand()) return;
 
@@ -230,7 +230,7 @@ public class TreeBotModule extends Module {
     }
 
     private void updateProgress() {
-        if (!(mc.interactionManager instanceof ClientPlayerInteractionManagerAccessor accessor)) return;
+        if (!(mc.gameMode instanceof MultiPlayerGameModeAccessor accessor)) return;
 
         prevProgress = progress;
         progress = accessor.meteor$getBreakingProgress();
@@ -244,22 +244,22 @@ public class TreeBotModule extends Module {
         if (prevPos != null && !currentBlock.equals(prevPos)) resetProgress();
         prevPos = currentBlock;
 
-        BlockState state = mc.world.getBlockState(currentBlock);
-        boolean breaksInstantly = mc.player.getAbilities().creativeMode || state.calcBlockBreakingDelta(mc.player, mc.world, currentBlock) >= 1;
+        BlockState state = mc.level.getBlockState(currentBlock);
+        boolean breaksInstantly = mc.player.getAbilities().instabuild || state.getDestroyProgress(mc.player, mc.level, currentBlock) >= 1;
 
-        float p = breaksInstantly ? 1 : MathHelper.lerp(event.tickDelta, prevProgress, progress);
-        p = MathHelper.clamp(p, 0, 1);
+        float p = breaksInstantly ? 1 : Mth.lerp(event.tickDelta, prevProgress, progress);
+        p = Mth.clamp(p, 0, 1);
 
-        float redFloat = MathHelper.clamp(p * 2F, 0, 1);
-        float greenFloat = MathHelper.clamp(2 - p * 2F, 0, 1);
+        float redFloat = Mth.clamp(p * 2F, 0, 1);
+        float greenFloat = Mth.clamp(2 - p * 2F, 0, 1);
 
         Color side = new Color((int) (redFloat * 255), (int) (greenFloat * 255), 0, 64);
         Color line = new Color((int) (redFloat * 255), (int) (greenFloat * 255), 0, 128);
 
-        Box box = new Box(currentBlock);
+        AABB box = new AABB(currentBlock);
         if (p < 1) {
             double shrink = (1 - p) * 0.5;
-            box = box.shrink(shrink, shrink, shrink);
+            box = box.deflate(shrink, shrink, shrink);
         }
 
         event.renderer.box(box, side, line, ShapeMode.Both, 0);
@@ -274,9 +274,9 @@ public class TreeBotModule extends Module {
     private ArrayList<BlockPos> getNeighbors(BlockPos pos) {
         ArrayList<BlockPos> neighbors = new ArrayList<>();
 
-        for (BlockPos blockPos : BlockPos.iterate(pos.add(-1, -1, -1), pos.add(1, 1, 1))) {
-            if (!TreeBotUtils.isLog(mc.world.getBlockState(blockPos))) continue;
-            neighbors.add(blockPos.toImmutable());
+        for (BlockPos blockPos : BlockPos.betweenClosed(pos.offset(-1, -1, -1), pos.offset(1, 1, 1))) {
+            if (!TreeBotUtils.isLog(mc.level.getBlockState(blockPos))) continue;
+            neighbors.add(blockPos.immutable());
         }
 
         return neighbors;
@@ -331,9 +331,9 @@ public class TreeBotModule extends Module {
             path = path.subList(processor.getIndex(), path.size());
 
             return path.stream()
-                .flatMap(pos -> Stream.of(pos, pos.up()))
+                .flatMap(pos -> Stream.of(pos, pos.above()))
                 .distinct()
-                .filter(pos -> TreeBotUtils.isLeaves(mc.world.getBlockState(pos)))
+                .filter(pos -> TreeBotUtils.isLeaves(mc.level.getBlockState(pos)))
                 .collect(Collectors.toCollection(ArrayList::new));
         }
 
@@ -344,7 +344,7 @@ public class TreeBotModule extends Module {
 
     private class TreeFinder extends TreeBotCustomPathFinder {
         public TreeFinder() {
-            super(BlockPos.ofFloored(TreeBotModule.this.mc.player.getX(), TreeBotModule.this.mc.player.getY(), TreeBotModule.this.mc.player.getZ()));
+            super(BlockPos.containing(TreeBotModule.this.mc.player.getX(), TreeBotModule.this.mc.player.getY(), TreeBotModule.this.mc.player.getZ()));
         }
 
         public TreeFinder(TreeBotCustomPathFinder pathFinder) {
@@ -353,7 +353,7 @@ public class TreeBotModule extends Module {
 
         @Override
         protected boolean isMineable(BlockPos pos) {
-            return TreeBotUtils.isLeaves(mc.world.getBlockState(pos));
+            return TreeBotUtils.isLeaves(mc.level.getBlockState(pos));
         }
 
         @Override
@@ -366,8 +366,8 @@ public class TreeBotModule extends Module {
         }
 
         private boolean isTreeStump(BlockPos pos) {
-            if (!TreeBotUtils.isLog(mc.world.getBlockState(pos))) return false;
-            if (TreeBotUtils.isLog(mc.world.getBlockState(pos.down()))) return false;
+            if (!TreeBotUtils.isLog(mc.level.getBlockState(pos))) return false;
+            if (TreeBotUtils.isLog(mc.level.getBlockState(pos.below()))) return false;
 
             analyzeTree(pos);
 
@@ -402,7 +402,7 @@ public class TreeBotModule extends Module {
 
     private class AngleFinder extends TreeBotCustomPathFinder {
         public AngleFinder() {
-            super(BlockPos.ofFloored(TreeBotModule.this.mc.player.getX(), TreeBotModule.this.mc.player.getY(), TreeBotModule.this.mc.player.getZ()));
+            super(BlockPos.containing(TreeBotModule.this.mc.player.getX(), TreeBotModule.this.mc.player.getY(), TreeBotModule.this.mc.player.getZ()));
             setThinkSpeed(512);
             setThinkTime(1);
         }
@@ -413,7 +413,7 @@ public class TreeBotModule extends Module {
 
         @Override
         protected boolean isMineable(BlockPos pos) {
-            return TreeBotUtils.isLeaves(mc.world.getBlockState(pos));
+            return TreeBotUtils.isLeaves(mc.level.getBlockState(pos));
         }
 
         @Override
@@ -423,7 +423,7 @@ public class TreeBotModule extends Module {
 
         private boolean hasAngle(TreeBotPathPos pos) {
             double rangeSq = range.get() * range.get();
-            Vec3d eyes = Vec3d.ofBottomCenter(pos).add(0, mc.player.getEyeHeight(mc.player.getPose()), 0);
+            Vec3 eyes = Vec3.atBottomCenterOf(pos).add(0, mc.player.getEyeHeight(mc.player.getPose()), 0);
 
             for (BlockPos log : tree.logs()) {
                 BlockBreakingHelper.BlockBreakingParams params = BlockBreakingHelper.getBlockBreakingParams(mc, eyes, log);
@@ -445,17 +445,17 @@ public class TreeBotModule extends Module {
         Server,
         Client;
 
-        public void face(net.minecraft.client.MinecraftClient mc, Vec3d target) {
+        public void face(net.minecraft.client.Minecraft mc, Vec3 target) {
             switch (this) {
                 case Off -> {
                 }
                 case Server -> RotationPackets.face(target);
                 case Client -> {
                     float[] angle = PlayerUtils.calculateAngle(target);
-                    mc.player.setYaw(angle[0]);
-                    mc.player.setHeadYaw(angle[0]);
-                    mc.player.setBodyYaw(angle[0]);
-                    mc.player.setPitch(angle[1]);
+                    mc.player.setYRot(angle[0]);
+                    mc.player.setYHeadRot(angle[0]);
+                    mc.player.setYBodyRot(angle[0]);
+                    mc.player.setXRot(angle[1]);
                 }
             }
         }
@@ -475,15 +475,15 @@ public class TreeBotModule extends Module {
         Server,
         Client;
 
-        public void swing(net.minecraft.client.MinecraftClient mc, Hand hand) {
+        public void swing(net.minecraft.client.Minecraft mc, InteractionHand hand) {
             switch (this) {
                 case Off -> {
                 }
                 case Server -> {
-                    if (mc.getNetworkHandler() == null) return;
-                    mc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(hand));
+                    if (mc.getConnection() == null) return;
+                    mc.getConnection().send(new ServerboundSwingPacket(hand));
                 }
-                case Client -> mc.player.swingHand(hand);
+                case Client -> mc.player.swing(hand);
             }
         }
 

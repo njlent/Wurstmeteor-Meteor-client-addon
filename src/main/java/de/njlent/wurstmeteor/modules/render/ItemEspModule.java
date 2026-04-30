@@ -9,11 +9,11 @@ import meteordevelopment.meteorclient.utils.render.RenderUtils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 public class ItemEspModule extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -61,7 +61,7 @@ public class ItemEspModule extends Module {
 
     @EventHandler
     private void onRender3D(Render3DEvent event) {
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
         Color sideColor = new Color(color.get());
         Color lineColor = new Color(color.get()).a(200);
@@ -69,27 +69,27 @@ public class ItemEspModule extends Module {
         double maxDistanceSq = maxDistance.get() * maxDistance.get();
         double extraSize = boxSize.get().extraSize * 0.5;
 
-        for (Entity entity : mc.world.getEntities()) {
+        for (Entity entity : mc.level.entitiesForRendering()) {
             if (!(entity instanceof ItemEntity item)) continue;
-            if (mc.player.squaredDistanceTo(item) > maxDistanceSq) continue;
+            if (mc.player.distanceToSqr(item) > maxDistanceSq) continue;
 
-            Box box = getInterpolatedBox(item, event.tickDelta);
-            if (extraSize > 0.0) box = box.expand(extraSize).offset(0.0, extraSize, 0.0);
+            AABB box = getInterpolatedBox(item, event.tickDelta);
+            if (extraSize > 0.0) box = box.inflate(extraSize).move(0.0, extraSize, 0.0);
 
             event.renderer.box(box, sideColor, lineColor, shapeMode.get(), 0);
 
             if (tracers.get() && RenderUtils.center != null) {
-                Vec3d center = box.getCenter();
+                Vec3 center = box.getCenter();
                 event.renderer.line(RenderUtils.center.x, RenderUtils.center.y, RenderUtils.center.z, center.x, center.y, center.z, lineColor);
             }
         }
     }
 
-    private Box getInterpolatedBox(Entity entity, float tickDelta) {
-        double x = MathHelper.lerp(tickDelta, entity.lastRenderX, entity.getX()) - entity.getX();
-        double y = MathHelper.lerp(tickDelta, entity.lastRenderY, entity.getY()) - entity.getY();
-        double z = MathHelper.lerp(tickDelta, entity.lastRenderZ, entity.getZ()) - entity.getZ();
-        return entity.getBoundingBox().offset(x, y, z);
+    private AABB getInterpolatedBox(Entity entity, float tickDelta) {
+        double x = Mth.lerp(tickDelta, entity.xOld, entity.getX()) - entity.getX();
+        double y = Mth.lerp(tickDelta, entity.yOld, entity.getY()) - entity.getY();
+        double z = Mth.lerp(tickDelta, entity.zOld, entity.getZ()) - entity.getZ();
+        return entity.getBoundingBox().move(x, y, z);
     }
 
     public enum BoxSize {

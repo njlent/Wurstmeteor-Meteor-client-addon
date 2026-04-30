@@ -3,8 +3,8 @@
 
  <img src="https://img.shields.io/badge/Meteor Client Addon-6f1ab1?logo=meteor&logoColor=white"/> 
  <br>
-  <img src="https://img.shields.io/badge/minecraft-26.1-red"/> 
- <img src="https://img.shields.io/badge/minecraft-1.21.11-green"/> 
+  <img src="https://img.shields.io/badge/minecraft-26.1.2-green"/>
+ <img src="https://img.shields.io/badge/minecraft-1.21.11-darkgreen"/>
  <img src="https://img.shields.io/badge/minecraft-1.21.10-darkgreen"/> 
  <img src="https://img.shields.io/badge/minecraft-1.21.5-darkgreen"/> 
  <img src="https://img.shields.io/badge/minecraft-1.21.4-darkgreen"/> 
@@ -15,7 +15,8 @@
 A [Meteor Client](https://github.com/MeteorDevelopment/meteor-client) addon that ports selected [Wurst Client](https://github.com/Wurst-Imperium/Wurst7) features to Meteor.
 
 ## Supported versions (check branches for legacy versions): 
-- **Minecraft 1.21.11 ([latest](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases))**
+- **Minecraft 26.1.2 ([latest](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases))**
+- **Minecraft 1.21.11 ([up to 0.1.23](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases))**
 - **Minecraft 1.21.10 ([up to 0.1.21](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.21))**
 - **Minecraft 1.21.5 ([legacy v0.1.22](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22))**
 - **Minecraft 1.21.4 ([legacy v0.1.22](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22))**
@@ -44,12 +45,13 @@ A [Meteor Client](https://github.com/MeteorDevelopment/meteor-client) addon that
 
 ## Stack
 
-- Minecraft: `1.21.11`
-- Yarn: `1.21.11+build.4`
-- Fabric Loader: `0.18.4`
-- Fabric API: `0.141.3+1.21.11`
-- Meteor Client: `1.21.11-SNAPSHOT`
-- Java: `21`
+- Minecraft: `26.1.2`
+- Fabric Loader: `0.19.2`
+- Fabric API: `0.146.1+26.1.2`
+- Meteor Client: `26.1.2-SNAPSHOT`
+- Loom: `1.16-SNAPSHOT`
+- Gradle: `9.4.1`
+- Java: `25`
 
 ## Build
 

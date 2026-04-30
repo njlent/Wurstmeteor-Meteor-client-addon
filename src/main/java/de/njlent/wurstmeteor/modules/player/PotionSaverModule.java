@@ -4,7 +4,7 @@ import de.njlent.wurstmeteor.WurstMeteorAddon;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 
 public class PotionSaverModule extends Module {
     public PotionSaverModule() {
@@ -14,13 +14,13 @@ public class PotionSaverModule extends Module {
     @EventHandler
     private void onSentPacket(PacketEvent.Send event) {
         if (!isFrozen()) return;
-        if (event.packet instanceof PlayerMoveC2SPacket) event.cancel();
+        if (event.packet instanceof ServerboundMovePlayerPacket) event.cancel();
     }
 
     public boolean isFrozen() {
         return isActive() && mc.player != null
-            && !mc.player.getStatusEffects().isEmpty()
-            && mc.player.getVelocity().x == 0
-            && mc.player.getVelocity().z == 0;
+            && !mc.player.getActiveEffects().isEmpty()
+            && mc.player.getDeltaMovement().x == 0
+            && mc.player.getDeltaMovement().z == 0;
     }
 }

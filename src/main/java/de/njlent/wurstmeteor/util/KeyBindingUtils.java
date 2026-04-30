@@ -1,19 +1,12 @@
 package de.njlent.wurstmeteor.util;
 
-import meteordevelopment.meteorclient.MeteorClient;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
+import net.minecraft.client.KeyMapping;
 
 public final class KeyBindingUtils {
     private KeyBindingUtils() {
     }
 
-    public static void resetPressedState(KeyBinding keyBinding) {
-        MinecraftClient mc = MeteorClient.mc;
-        if (mc == null || mc.getWindow() == null) return;
-
-        InputUtil.Key key = InputUtil.fromTranslationKey(keyBinding.getBoundKeyTranslationKey());
-        keyBinding.setPressed(InputUtil.isKeyPressed(mc.getWindow(), key.getCode()));
+    public static void resetPressedState(KeyMapping keyBinding) {
+        KeyMapping.setAll();
     }
 }

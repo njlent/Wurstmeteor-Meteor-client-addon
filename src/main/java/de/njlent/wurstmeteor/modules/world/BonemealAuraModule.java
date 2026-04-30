@@ -9,16 +9,17 @@ import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.utils.player.FindItemResult;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.*;
-import net.minecraft.item.Items;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
+import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.ClipContext;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -131,13 +132,13 @@ public class BonemealAuraModule extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (mc.player == null || mc.world == null || mc.interactionManager == null) return;
+        if (mc.player == null || mc.level == null || mc.gameMode == null) return;
 
         if (useDelay > 0) useDelay--;
         if (!fastPlace.get() && useDelay > 0) return;
 
-        if (!useWhileBreaking.get() && mc.interactionManager.isBreakingBlock()) return;
-        if (!useWhileRiding.get() && mc.player.hasVehicle()) return;
+        if (!useWhileBreaking.get() && mc.gameMode.isDestroying()) return;
+        if (!useWhileRiding.get() && mc.player.isPassenger()) return;
 
         AutoFarmModule autoFarm = Modules.get().get(AutoFarmModule.class);
         if (autoFarm != null && autoFarm.isActive() && autoFarm.isBusy()) return;
@@ -153,7 +154,7 @@ public class BonemealAuraModule extends Module {
             return;
         }
 
-        Hand hand = bonemeal.getHand() != null ? bonemeal.getHand() : Hand.MAIN_HAND;
+        InteractionHand hand = bonemeal.getHand() != null ? bonemeal.getHand() : InteractionHand.MAIN_HAND;
 
         if (multiMeal.get()) {
             boolean used = false;
@@ -161,7 +162,7 @@ public class BonemealAuraModule extends Module {
                 used |= useBonemeal(target, hand, false);
             }
             if (used) {
-                mc.player.swingHand(hand);
+                mc.player.swing(hand);
                 if (!fastPlace.get()) useDelay = 4;
             }
             return;
@@ -172,31 +173,34 @@ public class BonemealAuraModule extends Module {
         }
     }
 
-    private boolean useBonemeal(TargetBlock target, Hand hand, boolean swingOnSuccess) {
+    private boolean useBonemeal(TargetBlock target, InteractionHand hand, boolean swingOnSuccess) {
         if (rotate.get()) RotationPackets.face(target.hitPos());
 
         BlockHitResult hitResult = new BlockHitResult(target.hitPos(), Direction.UP, target.pos(), false);
 
-        ActionResult result = mc.interactionManager.interactBlock(mc.player, hand, hitResult);
-        if (!result.isAccepted()) return false;
+        InteractionResult result = mc.gameMode.useItemOn(mc.player, hand, hitResult);
+        if (!result.consumesAction()) return false;
 
-        if (swingOnSuccess) mc.player.swingHand(hand);
+        if (swingOnSuccess) mc.player.swing(hand);
         return true;
     }
 
     private List<TargetBlock> getValidBlocks() {
-        BlockPos center = BlockPos.ofFloored(mc.player.getEyePos());
+        BlockPos center = BlockPos.containing(mc.player.getEyePosition());
         int radius = (int) Math.ceil(range.get());
         double rangeSq = range.get() * range.get();
 
         List<TargetBlock> blocks = new ArrayList<>();
-        for (BlockPos pos : BlockPos.iterateOutwards(center, radius, radius, radius)) {
-            double distanceSq = pos.toCenterPos().squaredDistanceTo(mc.player.getEyePos());
+        for (BlockPos pos : BlockPos.betweenClosed(
+            center.offset(-radius, -radius, -radius),
+            center.offset(radius, radius, radius)
+        )) {
+            double distanceSq = pos.getCenter().distanceToSqr(mc.player.getEyePosition());
             if (distanceSq > rangeSq) continue;
             if (!isCorrectBlock(pos)) continue;
             if (checkLos.get() && !hasLineOfSight(pos)) continue;
 
-            blocks.add(new TargetBlock(pos.toImmutable(), pos.toCenterPos(), distanceSq));
+            blocks.add(new TargetBlock(pos.immutable(), pos.getCenter(), distanceSq));
         }
 
         blocks.sort(Comparator.comparingDouble(TargetBlock::distanceSq));
@@ -204,31 +208,31 @@ public class BonemealAuraModule extends Module {
     }
 
     private boolean hasLineOfSight(BlockPos pos) {
-        Vec3d eyes = mc.player.getEyePos();
-        Vec3d target = pos.toCenterPos();
+        Vec3 eyes = mc.player.getEyePosition();
+        Vec3 target = pos.getCenter();
 
-        HitResult hit = mc.world.raycast(new RaycastContext(
+        HitResult hit = mc.level.clip(new ClipContext(
             eyes,
             target,
-            RaycastContext.ShapeType.COLLIDER,
-            RaycastContext.FluidHandling.NONE,
+            ClipContext.Block.COLLIDER,
+            ClipContext.Fluid.NONE,
             mc.player
         ));
 
         if (hit.getType() == HitResult.Type.MISS) return true;
         if (hit instanceof BlockHitResult blockHitResult) {
-            return blockHitResult.getBlockPos().equals(pos) || blockHitResult.getBlockPos().equals(pos.down());
+            return blockHitResult.getBlockPos().equals(pos) || blockHitResult.getBlockPos().equals(pos.below());
         }
 
         return false;
     }
 
     private boolean isCorrectBlock(BlockPos pos) {
-        BlockState state = mc.world.getBlockState(pos);
+        BlockState state = mc.level.getBlockState(pos);
         Block block = state.getBlock();
 
-        if (!(block instanceof Fertilizable fertilizable)) return false;
-        if (!fertilizable.isFertilizable(mc.world, pos, state)) return false;
+        if (!(block instanceof BonemealableBlock fertilizable)) return false;
+        if (!fertilizable.isValidBonemealTarget(mc.level, pos, state)) return false;
         if (block instanceof GrassBlock) return false;
 
         if (block instanceof SaplingBlock) return saplings.get();
@@ -240,6 +244,6 @@ public class BonemealAuraModule extends Module {
         return other.get();
     }
 
-    private record TargetBlock(BlockPos pos, Vec3d hitPos, double distanceSq) {
+    private record TargetBlock(BlockPos pos, Vec3 hitPos, double distanceSq) {
     }
 }

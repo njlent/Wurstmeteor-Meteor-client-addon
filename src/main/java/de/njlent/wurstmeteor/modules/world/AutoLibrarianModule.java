@@ -16,30 +16,30 @@ import meteordevelopment.meteorclient.utils.player.FindItemResult;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.gui.screen.ingame.MerchantScreen;
-import net.minecraft.component.type.ItemEnchantmentsComponent;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.passive.VillagerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.network.packet.c2s.play.SelectMerchantTradeC2SPacket;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.screen.MerchantScreenHandler;
-import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.village.TradeOffer;
-import net.minecraft.village.TradeOfferList;
-import net.minecraft.village.VillagerProfession;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.client.gui.screens.inventory.MerchantScreen;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.network.protocol.game.ServerboundSelectTradePacket;
+import net.minecraft.core.Holder;
+import net.minecraft.world.inventory.MerchantMenu;
+import net.minecraft.world.inventory.ContainerInput;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.Direction;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.item.trading.MerchantOffers;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
 
 import java.util.*;
 
@@ -127,7 +127,7 @@ public class AutoLibrarianModule extends Module {
 
     private final Set<UUID> experiencedVillagers = new HashSet<>();
 
-    private VillagerEntity villager;
+    private Villager villager;
     private BlockPos jobSite;
     private boolean placingJobSite;
     private boolean breakingJobSite;
@@ -149,21 +149,21 @@ public class AutoLibrarianModule extends Module {
 
     @Override
     public void onDeactivate() {
-        if (mc.interactionManager != null) mc.interactionManager.cancelBlockBreaking();
+        if (mc.gameMode != null) mc.gameMode.stopDestroyBlock();
         restoreBackgroundMode();
         resetState();
     }
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (mc.player == null || mc.world == null || mc.interactionManager == null) return;
+        if (mc.player == null || mc.level == null || mc.gameMode == null) return;
 
         syncBackgroundMode();
 
         if (actionDelay > 0) actionDelay--;
         if (noLecternWarnCooldown > 0) noLecternWarnCooldown--;
 
-        if (villager == null || villager.isRemoved() || villager.isDead()) {
+        if (villager == null || villager.isRemoved() || !villager.isAlive()) {
             setTargetVillager();
             return;
         }
@@ -191,29 +191,29 @@ public class AutoLibrarianModule extends Module {
 
         if (handleProfessionTimeout()) return;
 
-        if (!(mc.currentScreen instanceof MerchantScreen merchantScreen)) {
+        if (!(mc.screen instanceof MerchantScreen merchantScreen)) {
             openTradeScreen();
             return;
         }
 
-        MerchantScreenHandler screenHandler = merchantScreen.getScreenHandler();
-        int experience = screenHandler.getExperience();
+        MerchantMenu screenHandler = merchantScreen.getMenu();
+        int experience = screenHandler.getTraderXp();
         if (experience > 0) {
-            warning("Villager at %s is already experienced and cannot be retrained.", villager.getBlockPos().toShortString());
-            experiencedVillagers.add(villager.getUuid());
+            warning("Villager at %s is already experienced and cannot be retrained.", villager.blockPosition().toShortString());
+            experiencedVillagers.add(villager.getUUID());
             villager = null;
             jobSite = null;
             closeTradeScreen();
             return;
         }
 
-        BookOffer offer = findEnchantedBookOffer(screenHandler.getRecipes());
+        BookOffer offer = findEnchantedBookOffer(screenHandler.getOffers());
         if (offer == null) {
             startLecternReroll("Villager is not selling an enchanted book; breaking lectern.");
             return;
         }
 
-        info("Villager is selling %s for %s.", offer.nameWithLevel(mc.world.getRegistryManager()), offer.formattedPrice());
+        info("Villager is selling %s for %s.", offer.nameWithLevel(mc.level.registryAccess()), offer.formattedPrice());
 
         List<BookOffer> wanted = WantedBooks.sanitize(wantedBooks.get());
         int wantedIndex = WantedBooks.indexOf(wanted, offer);
@@ -234,7 +234,7 @@ public class AutoLibrarianModule extends Module {
 
     @EventHandler
     private void onRender(Render3DEvent event) {
-        if (mc.player == null || mc.world == null) return;
+        if (mc.player == null || mc.level == null) return;
 
         Color greenSide = new Color(0, 255, 0, 40);
         Color greenLine = new Color(0, 255, 0, 180);
@@ -243,17 +243,17 @@ public class AutoLibrarianModule extends Module {
         Color redLine = new Color(255, 0, 0, 170);
 
         if (villager != null && villager.isAlive()) {
-            Box box = lerpedBox(villager, event.tickDelta);
+            AABB box = lerpedBox(villager, event.tickDelta);
             event.renderer.box(box, greenSide, greenLine, meteordevelopment.meteorclient.renderer.ShapeMode.Both, 0);
         }
 
         if (jobSite != null) {
-            event.renderer.box(new Box(jobSite), greenSide, greenLine, meteordevelopment.meteorclient.renderer.ShapeMode.Both, 0);
+            event.renderer.box(new AABB(jobSite), greenSide, greenLine, meteordevelopment.meteorclient.renderer.ShapeMode.Both, 0);
         }
 
         for (UUID villagerId : experiencedVillagers) {
-            if (mc.world.getEntity(villagerId) instanceof VillagerEntity experienced && experienced.isAlive()) {
-                Box box = lerpedBox(experienced, event.tickDelta);
+            if (mc.level.getEntity(villagerId) instanceof Villager experienced && experienced.isAlive()) {
+                AABB box = lerpedBox(experienced, event.tickDelta);
                 event.renderer.box(box, redSide, redLine, meteordevelopment.meteorclient.renderer.ShapeMode.Both, 0);
             }
         }
@@ -261,18 +261,18 @@ public class AutoLibrarianModule extends Module {
 
     private void setTargetVillager() {
         double rangeSq = range.get() * range.get();
-        VillagerEntity best = null;
+        Villager best = null;
         double bestDistance = Double.MAX_VALUE;
 
-        for (var entity : mc.world.getEntities()) {
-            if (!(entity instanceof VillagerEntity candidate)) continue;
+        for (var entity : mc.level.entitiesForRendering()) {
+            if (!(entity instanceof Villager candidate)) continue;
             if (candidate.isRemoved() || !candidate.isAlive()) continue;
-            if (mc.player.squaredDistanceTo(candidate) > rangeSq) continue;
-            if (!candidate.getVillagerData().profession().matchesKey(VillagerProfession.LIBRARIAN)) continue;
+            if (mc.player.distanceToSqr(candidate) > rangeSq) continue;
+            if (!candidate.getVillagerData().profession().is(VillagerProfession.LIBRARIAN)) continue;
             if (candidate.getVillagerData().level() != 1) continue;
-            if (experiencedVillagers.contains(candidate.getUuid())) continue;
+            if (experiencedVillagers.contains(candidate.getUUID())) continue;
 
-            double distance = mc.player.squaredDistanceTo(candidate);
+            double distance = mc.player.distanceToSqr(candidate);
             if (distance >= bestDistance) continue;
 
             best = candidate;
@@ -287,7 +287,7 @@ public class AutoLibrarianModule extends Module {
             return;
         }
 
-        info("Found villager at %s.", villager.getBlockPos().toShortString());
+        info("Found villager at %s.", villager.blockPosition().toShortString());
     }
 
     private void setTargetJobSite() {
@@ -306,13 +306,13 @@ public class AutoLibrarianModule extends Module {
     private void breakJobSite() {
         if (jobSite == null) return;
 
-        if (mc.currentScreen instanceof MerchantScreen) {
+        if (mc.screen instanceof MerchantScreen) {
             closeTradeScreen(false);
-            if (mc.currentScreen instanceof MerchantScreen) return;
+            if (mc.screen instanceof MerchantScreen) return;
         }
 
         double rangeSq = range.get() * range.get();
-        if (mc.player.squaredDistanceTo(jobSite.toCenterPos()) > rangeSq) {
+        if (mc.player.distanceToSqr(jobSite.getCenter()) > rangeSq) {
             BlockPos corrected = resolveJobSite();
             if (corrected != null) {
                 jobSite = corrected;
@@ -324,11 +324,11 @@ public class AutoLibrarianModule extends Module {
             return;
         }
 
-        BlockState state = mc.world.getBlockState(jobSite);
-        if (state.isAir() || state.isReplaceable()) {
+        BlockState state = mc.level.getBlockState(jobSite);
+        if (state.isAir() || state.canBeReplaced()) {
             BlockPos corrected = resolveJobSite();
             if (corrected != null && !corrected.equals(jobSite)) {
-                jobSite = corrected.toImmutable();
+                jobSite = corrected.immutable();
                 return;
             }
 
@@ -343,7 +343,7 @@ public class AutoLibrarianModule extends Module {
             return;
         }
 
-        if (rotate.get()) RotationPackets.face(jobSite.toCenterPos());
+        if (rotate.get()) RotationPackets.face(jobSite.getCenter());
 
         if (meteordevelopment.meteorclient.utils.world.BlockUtils.breakBlock(jobSite, swing.get())) {
             actionDelay = 1;
@@ -353,9 +353,9 @@ public class AutoLibrarianModule extends Module {
     private void placeJobSite() {
         if (jobSite == null) return;
 
-        BlockState state = mc.world.getBlockState(jobSite);
-        if (!state.isReplaceable()) {
-            if (state.isOf(Blocks.LECTERN)) {
+        BlockState state = mc.level.getBlockState(jobSite);
+        if (!state.canBeReplaced()) {
+            if (state.is(Blocks.LECTERN)) {
                 placingJobSite = false;
             } else {
                 placingJobSite = false;
@@ -382,44 +382,42 @@ public class AutoLibrarianModule extends Module {
             return;
         }
 
-        Hand hand = lectern.getHand() != null ? lectern.getHand() : Hand.MAIN_HAND;
+        InteractionHand hand = lectern.getHand() != null ? lectern.getHand() : InteractionHand.MAIN_HAND;
 
         BlockHitSelection selection = getPlacementHitResult(jobSite);
         if (selection == null) return;
 
-        mc.options.sneakKey.setPressed(true);
+        mc.options.keyShift.setDown(true);
 
         if (rotate.get()) RotationPackets.face(selection.hitPos());
 
-        ActionResult result = mc.interactionManager.interactBlock(mc.player, hand, selection.toHitResult());
-        if (result.isAccepted()) {
-            if (swing.get()) mc.player.swingHand(hand);
+        InteractionResult result = mc.gameMode.useItemOn(mc.player, hand, selection.toHitResult());
+        if (result.consumesAction()) {
+            if (swing.get()) mc.player.swing(hand);
             actionDelay = 4;
         }
 
-        KeyBindingUtils.resetPressedState(mc.options.sneakKey);
+        KeyBindingUtils.resetPressedState(mc.options.keyShift);
     }
 
     private void openTradeScreen() {
         if (actionDelay > 0) return;
         if (villager == null || !villager.isAlive()) return;
 
-        if (mc.player.squaredDistanceTo(villager) > range.get() * range.get()) {
+        if (mc.player.distanceToSqr(villager) > range.get() * range.get()) {
             error("Villager is out of range.");
             toggle();
             return;
         }
 
-        Vec3d boxCenter = villager.getBoundingBox().getCenter();
+        Vec3 boxCenter = villager.getBoundingBox().getCenter();
         if (rotate.get()) RotationPackets.face(boxCenter);
 
-        Vec3d hitPos = villager.getBoundingBox().raycast(mc.player.getEyePos(), boxCenter).orElse(boxCenter);
-        net.minecraft.util.hit.EntityHitResult hitResult = new net.minecraft.util.hit.EntityHitResult(villager, hitPos);
+        Vec3 hitPos = villager.getBoundingBox().clip(mc.player.getEyePosition(), boxCenter).orElse(boxCenter);
+        net.minecraft.world.phys.EntityHitResult hitResult = new net.minecraft.world.phys.EntityHitResult(villager, hitPos);
 
-        ActionResult result = mc.interactionManager.interactEntityAtLocation(mc.player, villager, hitResult, Hand.MAIN_HAND);
-        if (!result.isAccepted()) result = mc.interactionManager.interactEntity(mc.player, villager, Hand.MAIN_HAND);
-
-        if (result.isAccepted() && swing.get()) mc.player.swingHand(Hand.MAIN_HAND);
+        InteractionResult result = mc.gameMode.interact(mc.player, villager, hitResult, InteractionHand.MAIN_HAND);
+        if (result.consumesAction() && swing.get()) mc.player.swing(InteractionHand.MAIN_HAND);
 
         actionDelay = 4;
     }
@@ -429,7 +427,7 @@ public class AutoLibrarianModule extends Module {
     }
 
     private void closeTradeScreen(boolean applyDelay) {
-        if (mc.player != null) mc.player.closeHandledScreen();
+        if (mc.player != null) mc.player.closeContainer();
         if (applyDelay) actionDelay = 4;
     }
 
@@ -439,7 +437,7 @@ public class AutoLibrarianModule extends Module {
             return false;
         }
 
-        if (villager.getVillagerData().profession().matchesKey(VillagerProfession.LIBRARIAN)) {
+        if (villager.getVillagerData().profession().is(VillagerProfession.LIBRARIAN)) {
             resetProfessionTimeout();
             return false;
         }
@@ -470,36 +468,36 @@ public class AutoLibrarianModule extends Module {
         nonLibrarianTicks = 0;
     }
 
-    private void lockInCurrentTrade(MerchantScreenHandler screenHandler) {
-        if (mc.player == null || mc.getNetworkHandler() == null) return;
+    private void lockInCurrentTrade(MerchantMenu screenHandler) {
+        if (mc.player == null || mc.getConnection() == null) return;
 
-        screenHandler.setRecipeIndex(0);
-        mc.getNetworkHandler().sendPacket(new SelectMerchantTradeC2SPacket(0));
+        screenHandler.setSelectionHint(0);
+        mc.getConnection().send(new ServerboundSelectTradePacket(0));
 
-        mc.interactionManager.clickSlot(
-            screenHandler.syncId,
+        mc.gameMode.handleContainerInput(
+            screenHandler.containerId,
             2,
             0,
-            SlotActionType.PICKUP,
+            ContainerInput.PICKUP,
             mc.player
         );
     }
 
-    private BookOffer findEnchantedBookOffer(TradeOfferList offers) {
-        for (TradeOffer offer : offers) {
-            ItemStack stack = offer.getSellItem();
-            if (!stack.isOf(Items.ENCHANTED_BOOK)) continue;
+    private BookOffer findEnchantedBookOffer(MerchantOffers offers) {
+        for (MerchantOffer offer : offers) {
+            ItemStack stack = offer.getResult();
+            if (!stack.is(Items.ENCHANTED_BOOK)) continue;
 
-            ItemEnchantmentsComponent enchantments = EnchantmentHelper.getEnchantments(stack);
-            Set<Object2IntMap.Entry<RegistryEntry<Enchantment>>> entries = enchantments.getEnchantmentEntries();
+            ItemEnchantments enchantments = EnchantmentHelper.getEnchantmentsForCrafting(stack);
+            Set<Object2IntMap.Entry<Holder<Enchantment>>> entries = enchantments.entrySet();
             if (entries.isEmpty()) continue;
 
-            Object2IntMap.Entry<RegistryEntry<Enchantment>> first = entries.iterator().next();
-            String id = first.getKey().getKey().map(key -> key.getValue().toString()).orElse(null);
+            Object2IntMap.Entry<Holder<Enchantment>> first = entries.iterator().next();
+            String id = first.getKey().unwrapKey().map(key -> key.identifier().toString()).orElse(null);
             if (id == null) continue;
 
-            BookOffer bookOffer = new BookOffer(id, first.getIntValue(), offer.getDisplayedFirstBuyItem().getCount());
-            if (!bookOffer.isFullyValid(mc.world.getRegistryManager())) continue;
+            BookOffer bookOffer = new BookOffer(id, first.getIntValue(), offer.getCostA().getCount());
+            if (!bookOffer.isFullyValid(mc.level.registryAccess())) continue;
 
             return bookOffer;
         }
@@ -512,49 +510,49 @@ public class AutoLibrarianModule extends Module {
     }
 
     private BlockPos findAdjacentLecternNearVillager() {
-        if (villager == null || mc.world == null || mc.player == null) return null;
+        if (villager == null || mc.level == null || mc.player == null) return null;
 
         double rangeSq = range.get() * range.get();
-        BlockPos villagerPos = villager.getBlockPos();
+        BlockPos villagerPos = villager.blockPosition();
 
         BlockPos best = null;
         double bestDistance = Double.MAX_VALUE;
 
         // Hard rule: lectern must touch the villager's block position.
         for (Direction direction : Direction.values()) {
-            BlockPos candidate = villagerPos.offset(direction);
-            if (!mc.world.getBlockState(candidate).isOf(Blocks.LECTERN)) continue;
-            if (mc.player.squaredDistanceTo(candidate.toCenterPos()) > rangeSq) continue;
+            BlockPos candidate = villagerPos.relative(direction);
+            if (!mc.level.getBlockState(candidate).is(Blocks.LECTERN)) continue;
+            if (mc.player.distanceToSqr(candidate.getCenter()) > rangeSq) continue;
 
-            double distance = villager.squaredDistanceTo(candidate.toCenterPos());
+            double distance = villager.distanceToSqr(candidate.getCenter());
             if (distance >= bestDistance) continue;
 
-            best = candidate.toImmutable();
+            best = candidate.immutable();
             bestDistance = distance;
         }
 
         // Rare edge case: villager inside lectern block in very tight setups.
-        if (best == null && mc.world.getBlockState(villagerPos).isOf(Blocks.LECTERN)
-            && mc.player.squaredDistanceTo(villagerPos.toCenterPos()) <= rangeSq) {
-            return villagerPos.toImmutable();
+        if (best == null && mc.level.getBlockState(villagerPos).is(Blocks.LECTERN)
+            && mc.player.distanceToSqr(villagerPos.getCenter()) <= rangeSq) {
+            return villagerPos.immutable();
         }
 
         return best;
     }
 
     private BlockHitSelection getPlacementHitResult(BlockPos targetPos) {
-        Vec3d eyes = mc.player.getEyePos();
+        Vec3 eyes = mc.player.getEyePosition();
         BlockHitSelection best = null;
 
         for (Direction direction : Direction.values()) {
-            BlockPos neighbor = targetPos.offset(direction);
-            BlockState neighborState = mc.world.getBlockState(neighbor);
-            if (neighborState.getOutlineShape(mc.world, neighbor).isEmpty() || neighborState.isReplaceable()) continue;
+            BlockPos neighbor = targetPos.relative(direction);
+            BlockState neighborState = mc.level.getBlockState(neighbor);
+            if (neighborState.getShape(mc.level, neighbor).isEmpty() || neighborState.canBeReplaced()) continue;
 
             Direction side = direction.getOpposite();
-            Vec3d hitPos = neighbor.toCenterPos().add(side.getOffsetX() * 0.5, side.getOffsetY() * 0.5, side.getOffsetZ() * 0.5);
+            Vec3 hitPos = neighbor.getCenter().add(side.getStepX() * 0.5, side.getStepY() * 0.5, side.getStepZ() * 0.5);
             boolean lineOfSight = hasLineOfSight(eyes, hitPos);
-            double distanceSq = eyes.squaredDistanceTo(hitPos);
+            double distanceSq = eyes.distanceToSqr(hitPos);
 
             BlockHitSelection candidate = new BlockHitSelection(neighbor, side, hitPos, lineOfSight, distanceSq);
             if (best == null || candidate.isBetterThan(best)) best = candidate;
@@ -563,32 +561,32 @@ public class AutoLibrarianModule extends Module {
         return best;
     }
 
-    private boolean hasLineOfSight(Vec3d from, Vec3d to) {
-        return mc.world.raycast(new net.minecraft.world.RaycastContext(
+    private boolean hasLineOfSight(Vec3 from, Vec3 to) {
+        return mc.level.clip(new net.minecraft.world.level.ClipContext(
             from,
             to,
-            net.minecraft.world.RaycastContext.ShapeType.COLLIDER,
-            net.minecraft.world.RaycastContext.FluidHandling.NONE,
+            net.minecraft.world.level.ClipContext.Block.COLLIDER,
+            net.minecraft.world.level.ClipContext.Fluid.NONE,
             mc.player
-        )).getType() == net.minecraft.util.hit.HitResult.Type.MISS;
+        )).getType() == net.minecraft.world.phys.HitResult.Type.MISS;
     }
 
     private boolean shouldPauseForRepair() {
         int threshold = repairMode.get();
         if (threshold <= 0) return false;
 
-        ItemStack stack = mc.player.getMainHandStack();
-        if (!stack.isDamageable()) return false;
+        ItemStack stack = mc.player.getMainHandItem();
+        if (!stack.isDamageableItem()) return false;
 
-        int remaining = stack.getMaxDamage() - stack.getDamage();
+        int remaining = stack.getMaxDamage() - stack.getDamageValue();
         return remaining <= threshold;
     }
 
-    private static Box lerpedBox(VillagerEntity villager, float tickDelta) {
-        double x = MathHelper.lerp(tickDelta, villager.lastRenderX, villager.getX()) - villager.getX();
-        double y = MathHelper.lerp(tickDelta, villager.lastRenderY, villager.getY()) - villager.getY();
-        double z = MathHelper.lerp(tickDelta, villager.lastRenderZ, villager.getZ()) - villager.getZ();
-        return villager.getBoundingBox().offset(x, y, z);
+    private static AABB lerpedBox(Villager villager, float tickDelta) {
+        double x = Mth.lerp(tickDelta, villager.xOld, villager.getX()) - villager.getX();
+        double y = Mth.lerp(tickDelta, villager.yOld, villager.getY()) - villager.getY();
+        double z = Mth.lerp(tickDelta, villager.zOld, villager.getZ()) - villager.getZ();
+        return villager.getBoundingBox().move(x, y, z);
     }
 
     private void syncBackgroundMode() {

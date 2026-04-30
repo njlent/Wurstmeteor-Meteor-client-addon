@@ -1,11 +1,11 @@
 package de.njlent.wurstmeteor.modules.world.autolibrarian;
 
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
 
-public record BlockHitSelection(BlockPos neighbor, Direction side, Vec3d hitPos, boolean lineOfSight, double distanceSq) {
+public record BlockHitSelection(BlockPos neighbor, Direction side, Vec3 hitPos, boolean lineOfSight, double distanceSq) {
     public BlockHitResult toHitResult() {
         return new BlockHitResult(hitPos, side, neighbor, false);
     }
