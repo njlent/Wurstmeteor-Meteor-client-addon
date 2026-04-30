@@ -16,8 +16,8 @@ A [Meteor Client](https://github.com/MeteorDevelopment/meteor-client) addon that
 
 ## Supported versions (check branches for legacy versions): 
 - **Minecraft 26.1.2 ([latest](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases))**
-- **Minecraft 1.21.11 ([up to 0.1.22](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases))**
-- **Minecraft 1.21.10 ([up to 0.1.21](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.21))**
+- **Minecraft 1.21.11 ([up to v0.1.22](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22))**
+- **Minecraft 1.21.10 ([up to v0.1.21](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.21))**
 - **Minecraft 1.21.5 ([legacy v0.1.22](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22))**
 - **Minecraft 1.21.4 ([legacy v0.1.22](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22))**
 
