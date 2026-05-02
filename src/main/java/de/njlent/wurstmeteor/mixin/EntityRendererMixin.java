@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(EntityRenderer.class)
 public abstract class EntityRendererMixin<T extends Entity, S extends EntityRenderState> {
-    @Inject(method = "updateRenderState", at = @At("TAIL"))
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void wurstmeteor$addHealthToDisplayName(T entity, S state, float tickProgress, CallbackInfo ci) {
         if (Modules.get() == null) return;
         if (state.nameTag == null) return;

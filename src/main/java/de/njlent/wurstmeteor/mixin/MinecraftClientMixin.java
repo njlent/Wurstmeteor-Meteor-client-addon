@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Minecraft.class)
 public class MinecraftClientMixin {
-    @Inject(method = "handleBlockBreaking", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "continueAttack", at = @At("HEAD"), cancellable = true)
     private void wurstmeteor$cancelVanillaBlockBreaking(boolean breaking, CallbackInfo ci) {
         if (Modules.get() == null) return;
 
