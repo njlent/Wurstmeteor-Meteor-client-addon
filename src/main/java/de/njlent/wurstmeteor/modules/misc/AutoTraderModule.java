@@ -2,10 +2,7 @@ package de.njlent.wurstmeteor.modules.misc;
 
 import de.njlent.wurstmeteor.WurstMeteorAddon;
 import meteordevelopment.meteorclient.events.world.TickEvent;
-import meteordevelopment.meteorclient.settings.IntSetting;
-import meteordevelopment.meteorclient.settings.ItemListSetting;
-import meteordevelopment.meteorclient.settings.Setting;
-import meteordevelopment.meteorclient.settings.SettingGroup;
+import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;
@@ -31,10 +28,26 @@ public class AutoTraderModule extends Module {
 
     private final Setting<Integer> delay = sgGeneral.add(new IntSetting.Builder()
         .name("delay")
-        .description("Ticks to wait between trades.")
+        .description("Ticks to wait between trade bursts. 0 = no delay.")
         .defaultValue(4)
+        .range(0, 20)
+        .sliderRange(0, 20)
+        .build()
+    );
+
+    private final Setting<Integer> tradesPerTick = sgGeneral.add(new IntSetting.Builder()
+        .name("trades-per-tick")
+        .description("Maximum matching trades to execute each tick once delay is over.")
+        .defaultValue(1)
         .range(1, 20)
         .sliderRange(1, 20)
+        .build()
+    );
+
+    private final Setting<OutputMode> outputMode = sgGeneral.add(new EnumSetting.Builder<OutputMode>()
+        .name("output-mode")
+        .description("Where trade results should go after clicking the villager output slot.")
+        .defaultValue(OutputMode.Inventory)
         .build()
     );
 
@@ -63,6 +76,17 @@ public class AutoTraderModule extends Module {
         List<Item> wanted = sellItems.get();
         if (wanted.isEmpty()) return;
 
+        int tradesDone = 0;
+        while (tradesDone < tradesPerTick.get() && doTrade(menu)) {
+            tradesDone++;
+        }
+
+        if (tradesDone > 0) cooldown = delay.get();
+    }
+
+    private boolean doTrade(MerchantMenu menu) {
+        List<Item> wanted = sellItems.get();
+
         for (int i = 0; i < menu.getOffers().size(); i++) {
             MerchantOffer offer = menu.getOffers().get(i);
             ItemStack result = offer.getResult();
@@ -75,11 +99,12 @@ public class AutoTraderModule extends Module {
             menu.setSelectionHint(i);
             menu.tryMoveItems(i);
             mc.getConnection().send(new ServerboundSelectTradePacket(i));
-            mc.gameMode.handleContainerInput(menu.containerId, 2, 0, ContainerInput.PICKUP, mc.player);
+            mc.gameMode.handleContainerInput(menu.containerId, 2, 0, outputMode.get().input, mc.player);
 
-            cooldown = delay.get();
-            return;
+            return true;
         }
+
+        return false;
     }
 
     private int count(Item item) {
@@ -89,5 +114,16 @@ public class AutoTraderModule extends Module {
             if (stack.is(item)) total += stack.getCount();
         }
         return total;
+    }
+
+    public enum OutputMode {
+        Inventory(ContainerInput.QUICK_MOVE),
+        Cursor(ContainerInput.PICKUP);
+
+        private final ContainerInput input;
+
+        OutputMode(ContainerInput input) {
+            this.input = input;
+        }
     }
 }
