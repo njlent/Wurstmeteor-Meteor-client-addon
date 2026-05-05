@@ -10,6 +10,7 @@ import de.njlent.wurstmeteor.modules.misc.AntiSpamModule;
 import de.njlent.wurstmeteor.modules.misc.AntiDropModule;
 import de.njlent.wurstmeteor.modules.misc.AutoTraderModule;
 import de.njlent.wurstmeteor.modules.misc.AutoDropModule;
+import de.njlent.wurstmeteor.modules.misc.AutoStealModule;
 import de.njlent.wurstmeteor.modules.misc.BeaconExploitModule;
 import de.njlent.wurstmeteor.modules.misc.CommandScannerModule;
 import de.njlent.wurstmeteor.modules.misc.DamageDetectModule;
@@ -72,6 +73,7 @@ public class WurstMeteorAddon extends MeteorAddon {
         modules.add(new AntiSpamModule());
         modules.add(new AntiDropModule());
         modules.add(new AutoDropModule());
+        modules.add(new AutoStealModule());
         modules.add(new CommandScannerModule());
         modules.add(new DamageDetectModule());
         modules.add(new PotionSaverModule());
