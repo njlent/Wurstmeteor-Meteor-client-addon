@@ -12,6 +12,7 @@ import de.njlent.wurstmeteor.modules.misc.AutoTraderModule;
 import de.njlent.wurstmeteor.modules.misc.AutoDropModule;
 import de.njlent.wurstmeteor.modules.misc.AutoStealModule;
 import de.njlent.wurstmeteor.modules.misc.BeaconExploitModule;
+import de.njlent.wurstmeteor.modules.misc.CheatDetectorModule;
 import de.njlent.wurstmeteor.modules.misc.CommandScannerModule;
 import de.njlent.wurstmeteor.modules.misc.DamageDetectModule;
 import de.njlent.wurstmeteor.modules.misc.XCarryModule;
@@ -74,6 +75,7 @@ public class WurstMeteorAddon extends MeteorAddon {
         modules.add(new AutoMineModule());
         modules.add(new AutoTraderModule());
         modules.add(new BeaconExploitModule());
+        modules.add(new CheatDetectorModule());
         modules.add(new FeedAuraModule());
         modules.add(new MaceDmgModule());
         modules.add(new ArrowDmgModule());
