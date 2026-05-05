@@ -2,6 +2,7 @@ package de.njlent.wurstmeteor.modules.misc;
 
 import de.njlent.wurstmeteor.WurstMeteorAddon;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import meteordevelopment.meteorclient.events.render.Render2DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.IntSetting;
@@ -13,8 +14,8 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -29,6 +30,10 @@ import java.util.Locale;
 import java.util.Set;
 
 public class EnchantmentHelperModule extends Module {
+    private static final int PANEL_WIDTH = 230;
+    private static final int PANEL_PADDING = 6;
+    private static final int LINE_HEIGHT = 10;
+
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
     private final Setting<Boolean> includePlayerInventory = sgGeneral.add(new BoolSetting.Builder()
@@ -54,7 +59,7 @@ public class EnchantmentHelperModule extends Module {
 
     private final Setting<Integer> maxLines = sgGeneral.add(new IntSetting.Builder()
         .name("max-lines")
-        .description("Maximum lines printed per container.")
+        .description("Maximum visible lines in the panel.")
         .defaultValue(12)
         .range(1, 50)
         .sliderRange(3, 25)
@@ -62,58 +67,92 @@ public class EnchantmentHelperModule extends Module {
     );
 
     private AbstractContainerScreen<?> lastScreen;
+    private List<Entry> currentEntries = List.of();
 
     public EnchantmentHelperModule() {
-        super(WurstMeteorAddon.CATEGORY, "enchantment-helper", "Summarizes enchanted items in open containers.");
+        super(WurstMeteorAddon.CATEGORY, "enchantment-helper", "Shows a side panel with enchanted items in open containers.");
     }
 
     @Override
     public void onActivate() {
         lastScreen = null;
+        currentEntries = List.of();
     }
 
     @Override
     public void onDeactivate() {
         lastScreen = null;
+        currentEntries = List.of();
     }
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
         if (mc.player == null) {
             lastScreen = null;
+            currentEntries = List.of();
             return;
         }
 
         if (!(mc.screen instanceof AbstractContainerScreen<?> screen)) {
             lastScreen = null;
+            currentEntries = List.of();
             return;
         }
 
-        if (screen == lastScreen) return;
+        if (!hasExternalSlots(screen)) {
+            lastScreen = null;
+            currentEntries = List.of();
+            return;
+        }
+
+        if (screen == lastScreen && !currentEntries.isEmpty()) return;
         lastScreen = screen;
 
         List<Entry> entries = scan(screen);
-        if (entries.isEmpty()) return;
-
         entries.sort(Comparator.comparing(Entry::category).thenComparing(Entry::slot));
-        info("EnchantmentHelper found %d enchanted stack%s.", entries.size(), entries.size() == 1 ? "" : "s");
+        currentEntries = entries;
+    }
 
-        int limit = Math.min(maxLines.get(), entries.size());
-        for (int i = 0; i < limit; i++) {
-            Entry entry = entries.get(i);
-            info("%s %s", entry.category(), entry.text());
+    @EventHandler
+    private void onRender(Render2DEvent event) {
+        if (mc.player == null || !(mc.screen instanceof AbstractContainerScreen<?> screen) || currentEntries.isEmpty()) return;
+        if (!hasExternalSlots(screen)) return;
+
+        int visibleLines = Math.min(maxLines.get(), currentEntries.size());
+        int panelHeight = PANEL_PADDING * 2 + LINE_HEIGHT * (visibleLines + 2);
+        int x = Math.max(4, Math.min(event.screenWidth - PANEL_WIDTH - 4, 8));
+        int y = Math.max(4, (event.screenHeight - panelHeight) / 2);
+
+        event.graphics.fill(x, y, x + PANEL_WIDTH, y + panelHeight, 0xC0101010);
+        event.graphics.outline(x, y, PANEL_WIDTH, panelHeight, 0x804E7BFF);
+        event.graphics.text(mc.font, "Enchantment Helper", x + PANEL_PADDING, y + PANEL_PADDING, 0xFFEDEDED, true);
+        event.graphics.text(mc.font, currentEntries.size() + " stack" + (currentEntries.size() == 1 ? "" : "s"), x + PANEL_WIDTH - 62, y + PANEL_PADDING, 0xFF9FB5FF, true);
+
+        int lineY = y + PANEL_PADDING + LINE_HEIGHT + 4;
+        for (int i = 0; i < visibleLines; i++) {
+            Entry entry = currentEntries.get(i);
+            int color = switch (entry.category()) {
+                case "Book" -> 0xFF7FD7FF;
+                case "Weapon" -> 0xFFFF8888;
+                case "Shulker" -> 0xFFD9A8FF;
+                default -> 0xFFFFD66E;
+            };
+
+            event.graphics.text(mc.font, trim(entry.text(), 36), x + PANEL_PADDING, lineY, color, true);
+            lineY += LINE_HEIGHT;
         }
 
-        if (entries.size() > limit) info("...and %d more.", entries.size() - limit);
+        if (currentEntries.size() > visibleLines) {
+            event.graphics.text(mc.font, "+" + (currentEntries.size() - visibleLines) + " more", x + PANEL_PADDING, lineY, 0xFFB8B8B8, true);
+        }
     }
 
     private List<Entry> scan(AbstractContainerScreen<?> screen) {
         List<Entry> entries = new ArrayList<>();
-        int playerSlotsStart = Math.max(0, screen.getMenu().slots.size() - 36);
+        Inventory inventory = mc.player.getInventory();
 
-        for (int i = 0; i < screen.getMenu().slots.size(); i++) {
-            Slot slot = screen.getMenu().slots.get(i);
-            boolean playerSlot = i >= playerSlotsStart;
+        for (Slot slot : screen.getMenu().slots) {
+            boolean playerSlot = slot.container == inventory;
             if (playerSlot && !includePlayerInventory.get()) continue;
 
             ItemStack stack = slot.getItem();
@@ -165,9 +204,9 @@ public class EnchantmentHelperModule extends Module {
     }
 
     private String category(ItemStack stack) {
-        if (stack.is(Items.ENCHANTED_BOOK)) return ChatFormatting.AQUA + "Book" + ChatFormatting.RESET;
-        if (stack.getItem().components().has(DataComponents.WEAPON)) return ChatFormatting.RED + "Weapon" + ChatFormatting.RESET;
-        return ChatFormatting.GOLD + "Gear" + ChatFormatting.RESET;
+        if (stack.is(Items.ENCHANTED_BOOK)) return "Book";
+        if (stack.getItem().components().has(DataComponents.WEAPON)) return "Weapon";
+        return "Gear";
     }
 
     private String humanize(String path) {
@@ -180,6 +219,21 @@ public class EnchantmentHelperModule extends Module {
         }
 
         return result.isEmpty() ? path : result.toString();
+    }
+
+    private boolean hasExternalSlots(AbstractContainerScreen<?> screen) {
+        if (mc.player == null) return false;
+        Inventory inventory = mc.player.getInventory();
+        for (Slot slot : screen.getMenu().slots) {
+            if (slot.container != inventory) return true;
+        }
+
+        return false;
+    }
+
+    private String trim(String text, int max) {
+        if (text.length() <= max) return text;
+        return text.substring(0, Math.max(0, max - 3)) + "...";
     }
 
     private record Entry(String category, int slot, String text) {}
