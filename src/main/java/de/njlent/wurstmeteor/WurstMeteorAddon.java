@@ -17,6 +17,7 @@ import de.njlent.wurstmeteor.modules.misc.CheatDetectorModule;
 import de.njlent.wurstmeteor.modules.misc.CommandScannerModule;
 import de.njlent.wurstmeteor.modules.misc.DamageDetectModule;
 import de.njlent.wurstmeteor.modules.misc.EnchantmentHelperModule;
+import de.njlent.wurstmeteor.modules.misc.QuickShulkerModule;
 import de.njlent.wurstmeteor.modules.misc.XCarryModule;
 import de.njlent.wurstmeteor.modules.movement.AntiVoidModule;
 import de.njlent.wurstmeteor.modules.movement.CreativeFlightModule;
@@ -90,6 +91,7 @@ public class WurstMeteorAddon extends MeteorAddon {
         modules.add(new CommandScannerModule());
         modules.add(new DamageDetectModule());
         modules.add(new EnchantmentHelperModule());
+        modules.add(new QuickShulkerModule());
         modules.add(new XCarryModule());
         modules.add(new PotionSaverModule());
         modules.add(new AntiVoidModule());
