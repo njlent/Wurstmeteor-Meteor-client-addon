@@ -2,7 +2,6 @@ package de.njlent.wurstmeteor.modules.misc;
 
 import de.njlent.wurstmeteor.WurstMeteorAddon;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import meteordevelopment.meteorclient.events.render.Render2DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.IntSetting;
@@ -11,11 +10,13 @@ import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -30,9 +31,10 @@ import java.util.Locale;
 import java.util.Set;
 
 public class EnchantmentHelperModule extends Module {
-    private static final int PANEL_WIDTH = 230;
-    private static final int PANEL_PADDING = 6;
-    private static final int LINE_HEIGHT = 10;
+    private static final int PANEL_WIDTH = 184;
+    private static final int PANEL_PADDING = 5;
+    private static final int ROW_HEIGHT = 24;
+    private static final int BUTTON_WIDTH = 28;
 
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
@@ -68,6 +70,9 @@ public class EnchantmentHelperModule extends Module {
 
     private AbstractContainerScreen<?> lastScreen;
     private List<Entry> currentEntries = List.of();
+    private int panelX;
+    private int panelY;
+    private int visibleRows;
 
     public EnchantmentHelperModule() {
         super(WurstMeteorAddon.CATEGORY, "enchantment-helper", "Shows a side panel with enchanted items in open containers.");
@@ -113,23 +118,23 @@ public class EnchantmentHelperModule extends Module {
         currentEntries = entries;
     }
 
-    @EventHandler
-    private void onRender(Render2DEvent event) {
-        if (mc.player == null || !(mc.screen instanceof AbstractContainerScreen<?> screen) || currentEntries.isEmpty()) return;
+    public void renderPanel(AbstractContainerScreen<?> screen, GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
+        if (mc.player == null || currentEntries.isEmpty()) return;
         if (!hasExternalSlots(screen)) return;
 
-        int visibleLines = Math.min(maxLines.get(), currentEntries.size());
-        int panelHeight = PANEL_PADDING * 2 + LINE_HEIGHT * (visibleLines + 2);
-        int x = Math.max(4, Math.min(event.screenWidth - PANEL_WIDTH - 4, 8));
-        int y = Math.max(4, (event.screenHeight - panelHeight) / 2);
+        visibleRows = Math.min(maxLines.get(), currentEntries.size());
+        int panelHeight = PANEL_PADDING * 2 + 12 + visibleRows * ROW_HEIGHT;
+        panelX = 6;
+        panelY = Math.max(4, (graphics.guiHeight() - panelHeight) / 2);
 
-        event.graphics.fill(x, y, x + PANEL_WIDTH, y + panelHeight, 0xC0101010);
-        event.graphics.outline(x, y, PANEL_WIDTH, panelHeight, 0x804E7BFF);
-        event.graphics.text(mc.font, "Enchantment Helper", x + PANEL_PADDING, y + PANEL_PADDING, 0xFFEDEDED, true);
-        event.graphics.text(mc.font, currentEntries.size() + " stack" + (currentEntries.size() == 1 ? "" : "s"), x + PANEL_WIDTH - 62, y + PANEL_PADDING, 0xFF9FB5FF, true);
+        graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + panelHeight, 0xE0101010);
+        graphics.outline(panelX, panelY, PANEL_WIDTH, panelHeight, 0xB04E7BFF);
+        graphics.text(mc.font, "Enchantments", panelX + PANEL_PADDING, panelY + PANEL_PADDING, 0xFFEDEDED, true);
+        String count = Integer.toString(currentEntries.size());
+        graphics.text(mc.font, count, panelX + PANEL_WIDTH - PANEL_PADDING - mc.font.width(count), panelY + PANEL_PADDING, 0xFF9FB5FF, true);
 
-        int lineY = y + PANEL_PADDING + LINE_HEIGHT + 4;
-        for (int i = 0; i < visibleLines; i++) {
+        int rowY = panelY + PANEL_PADDING + 14;
+        for (int i = 0; i < visibleRows; i++) {
             Entry entry = currentEntries.get(i);
             int color = switch (entry.category()) {
                 case "Book" -> 0xFF7FD7FF;
@@ -138,13 +143,51 @@ public class EnchantmentHelperModule extends Module {
                 default -> 0xFFFFD66E;
             };
 
-            event.graphics.text(mc.font, trim(entry.text(), 36), x + PANEL_PADDING, lineY, color, true);
-            lineY += LINE_HEIGHT;
+            boolean hovered = mouseX >= panelX && mouseX <= panelX + PANEL_WIDTH && mouseY >= rowY && mouseY < rowY + ROW_HEIGHT;
+            if (hovered) graphics.fill(panelX + 1, rowY, panelX + PANEL_WIDTH - 1, rowY + ROW_HEIGHT, 0x303A4A70);
+
+            graphics.item(entry.stack(), panelX + PANEL_PADDING, rowY + 4);
+            String text = trimToWidth(entry.enchantments(), PANEL_WIDTH - PANEL_PADDING * 3 - 16 - BUTTON_WIDTH - 6);
+            graphics.text(mc.font, text, panelX + PANEL_PADDING + 21, rowY + 8, color, true);
+
+            int buttonX = panelX + PANEL_WIDTH - PANEL_PADDING - BUTTON_WIDTH;
+            int buttonY = rowY + 5;
+            int buttonColor = entry.slotIndex() >= 0 ? 0xB0253348 : 0x70252525;
+            graphics.fill(buttonX, buttonY, buttonX + BUTTON_WIDTH, buttonY + 14, buttonColor);
+            graphics.outline(buttonX, buttonY, BUTTON_WIDTH, 14, entry.slotIndex() >= 0 ? 0xFF7FA4FF : 0xFF666666);
+            graphics.text(mc.font, "Take", buttonX + 3, buttonY + 3, entry.slotIndex() >= 0 ? 0xFFEDEDED : 0xFF777777, true);
+
+            rowY += ROW_HEIGHT;
         }
 
-        if (currentEntries.size() > visibleLines) {
-            event.graphics.text(mc.font, "+" + (currentEntries.size() - visibleLines) + " more", x + PANEL_PADDING, lineY, 0xFFB8B8B8, true);
+        if (currentEntries.size() > visibleRows) {
+            String more = "+" + (currentEntries.size() - visibleRows) + " more";
+            graphics.text(mc.font, more, panelX + PANEL_PADDING, rowY - 2, 0xFFB8B8B8, true);
         }
+    }
+
+    public boolean handlePanelClick(AbstractContainerScreen<?> screen, double mouseX, double mouseY, int button) {
+        if (button != 0 || mc.player == null || mc.gameMode == null || currentEntries.isEmpty()) return false;
+        if (!hasExternalSlots(screen)) return false;
+
+        int rowY = panelY + PANEL_PADDING + 14;
+        for (int i = 0; i < visibleRows && i < currentEntries.size(); i++) {
+            Entry entry = currentEntries.get(i);
+            int buttonX = panelX + PANEL_WIDTH - PANEL_PADDING - BUTTON_WIDTH;
+            int buttonY = rowY + 5;
+            if (mouseX >= buttonX && mouseX <= buttonX + BUTTON_WIDTH && mouseY >= buttonY && mouseY <= buttonY + 14) {
+                if (entry.slotIndex() >= 0) {
+                    mc.gameMode.handleContainerInput(screen.getMenu().containerId, entry.slotIndex(), 0, ContainerInput.QUICK_MOVE, mc.player);
+                    currentEntries = scan(screen);
+                    currentEntries.sort(Comparator.comparing(Entry::category).thenComparing(Entry::slot));
+                }
+                return true;
+            }
+
+            rowY += ROW_HEIGHT;
+        }
+
+        return mouseX >= panelX && mouseX <= panelX + PANEL_WIDTH && mouseY >= panelY && mouseY <= panelY + PANEL_PADDING * 2 + 12 + visibleRows * ROW_HEIGHT;
     }
 
     private List<Entry> scan(AbstractContainerScreen<?> screen) {
@@ -157,16 +200,16 @@ public class EnchantmentHelperModule extends Module {
 
             ItemStack stack = slot.getItem();
             if (stack.isEmpty()) continue;
-            collectStack(entries, stack, slot.getContainerSlot() + 1, playerSlot ? "Inv" : "Box");
+            collectStack(entries, stack, slot.index, slot.getContainerSlot() + 1, playerSlot ? "Inv" : "Box");
         }
 
         return entries;
     }
 
-    private void collectStack(List<Entry> entries, ItemStack stack, int slot, String source) {
+    private void collectStack(List<Entry> entries, ItemStack stack, int slotIndex, int slot, String source) {
         if (!booksOnly.get() || stack.is(Items.ENCHANTED_BOOK)) {
             String enchants = enchantments(stack);
-            if (!enchants.isEmpty()) entries.add(new Entry(category(stack), slot, source + " #" + slot + " " + stack.getHoverName().getString() + " | " + enchants));
+            if (!enchants.isEmpty()) entries.add(new Entry(category(stack), slotIndex, slot, stack.copy(), source + " #" + slot, enchants));
         }
 
         if (!includeShulkerContents.get()) return;
@@ -183,7 +226,7 @@ public class EnchantmentHelperModule extends Module {
             }
 
             String enchants = enchantments(child);
-            if (!enchants.isEmpty()) entries.add(new Entry("Shulker", slot, source + " #" + slot + "." + childSlot + " " + child.getHoverName().getString() + " | " + enchants));
+            if (!enchants.isEmpty()) entries.add(new Entry("Shulker", -1, slot, child.copy(), source + " #" + slot + "." + childSlot, enchants));
             childSlot++;
         }
     }
@@ -231,10 +274,18 @@ public class EnchantmentHelperModule extends Module {
         return false;
     }
 
-    private String trim(String text, int max) {
-        if (text.length() <= max) return text;
-        return text.substring(0, Math.max(0, max - 3)) + "...";
+    private String trimToWidth(String text, int width) {
+        if (mc.font.width(text) <= width) return text;
+        String suffix = "...";
+        int suffixWidth = mc.font.width(suffix);
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < text.length(); i++) {
+            if (mc.font.width(builder.toString() + text.charAt(i)) + suffixWidth > width) break;
+            builder.append(text.charAt(i));
+        }
+
+        return builder + suffix;
     }
 
-    private record Entry(String category, int slot, String text) {}
+    private record Entry(String category, int slotIndex, int slot, ItemStack stack, String source, String enchantments) {}
 }

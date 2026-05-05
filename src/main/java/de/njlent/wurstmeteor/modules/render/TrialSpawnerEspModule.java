@@ -2,6 +2,7 @@ package de.njlent.wurstmeteor.modules.render;
 
 import de.njlent.wurstmeteor.WurstMeteorAddon;
 import de.njlent.wurstmeteor.mixin.TrialSpawnerStateDataAccessor;
+import de.njlent.wurstmeteor.mixin.VaultServerDataAccessor;
 import de.njlent.wurstmeteor.util.BlockEntityUtils;
 import meteordevelopment.meteorclient.events.render.Render2DEvent;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
@@ -28,6 +29,7 @@ import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerConfig;
 import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerState;
 import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerStateData;
 import net.minecraft.world.level.block.entity.vault.VaultState;
+import net.minecraft.world.level.block.entity.vault.VaultBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import org.joml.Vector3d;
@@ -35,6 +37,8 @@ import org.joml.Vector3d;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.UUID;
 
 public class TrialSpawnerEspModule extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -51,6 +55,13 @@ public class TrialSpawnerEspModule extends Module {
     private final Setting<Boolean> showVaults = sgGeneral.add(new BoolSetting.Builder()
         .name("show-vaults")
         .description("Also highlights vaults.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Boolean> showSpawners = sgGeneral.add(new BoolSetting.Builder()
+        .name("show-spawners")
+        .description("Highlights trial spawners.")
         .defaultValue(true)
         .build()
     );
@@ -113,6 +124,20 @@ public class TrialSpawnerEspModule extends Module {
         .build()
     );
 
+    private final Setting<Boolean> showTriggerBox = sgGeneral.add(new BoolSetting.Builder()
+        .name("show-trigger-box")
+        .description("Draws a box showing where players trigger the trial spawner.")
+        .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Boolean> showVaultClaimState = sgGeneral.add(new BoolSetting.Builder()
+        .name("show-vault-claim-state")
+        .description("Shows whether the current player has claimed/opened a vault when server data is available.")
+        .defaultValue(true)
+        .build()
+    );
+
     private final Setting<SettingColor> spawnerColor = sgGeneral.add(new ColorSetting.Builder()
         .name("spawner-color")
         .description("Trial spawner ESP color.")
@@ -144,7 +169,7 @@ public class TrialSpawnerEspModule extends Module {
 
         count = 0;
         for (BlockEntity blockEntity : BlockEntityUtils.getLoadedBlockEntities(mc.level, mc.player.blockPosition(), chunkRadius.get())) {
-            boolean spawner = blockEntity.getType() == BlockEntityType.TRIAL_SPAWNER;
+            boolean spawner = showSpawners.get() && blockEntity.getType() == BlockEntityType.TRIAL_SPAWNER;
             boolean vault = showVaults.get() && blockEntity.getType() == BlockEntityType.VAULT;
             if (!spawner && !vault) continue;
 
@@ -153,6 +178,16 @@ public class TrialSpawnerEspModule extends Module {
             Color line = new Color(side).a(220);
             AABB box = new AABB(blockEntity.getBlockPos());
             event.renderer.box(box, side, line, ShapeMode.Both, 0);
+
+            if (spawner && showTriggerBox.get() && blockEntity instanceof TrialSpawnerBlockEntity trialSpawner) {
+                int range = trialSpawner.getTrialSpawner().getRequiredPlayerRange();
+                if (range > 0) {
+                    AABB triggerBox = new AABB(blockEntity.getBlockPos()).inflate(range);
+                    Color triggerSide = new Color(spawnerColor.get()).a(30);
+                    Color triggerLine = new Color(spawnerColor.get()).a(120);
+                    event.renderer.box(triggerBox, triggerSide, triggerLine, ShapeMode.Lines, 0);
+                }
+            }
 
             if (tracers.get() && RenderUtils.center != null) {
                 var center = box.getCenter();
@@ -166,7 +201,7 @@ public class TrialSpawnerEspModule extends Module {
         if (!textOverlay.get() || mc.player == null || mc.level == null) return;
 
         for (BlockEntity blockEntity : BlockEntityUtils.getLoadedBlockEntities(mc.level, mc.player.blockPosition(), chunkRadius.get())) {
-            boolean spawner = blockEntity.getType() == BlockEntityType.TRIAL_SPAWNER;
+            boolean spawner = showSpawners.get() && blockEntity.getType() == BlockEntityType.TRIAL_SPAWNER;
             boolean vault = showVaults.get() && blockEntity.getType() == BlockEntityType.VAULT;
             if (!spawner && !vault) continue;
 
@@ -229,7 +264,7 @@ public class TrialSpawnerEspModule extends Module {
             if (cooldownTicks > 0) lines.add(new Line("Cooldown: " + formatSeconds(cooldownTicks), Color.WHITE));
         }
 
-        if (showActivationRange.get()) lines.add(new Line("Range: " + logic.getRequiredPlayerRange() + "m", Color.WHITE));
+        if (showActivationRange.get() && !showTriggerBox.get()) lines.add(new Line("Range: " + logic.getRequiredPlayerRange() + "m", Color.WHITE));
         if (showDistance.get()) lines.add(new Line("Distance: " + Math.round(Math.sqrt(mc.player.distanceToSqr(blockEntity.getBlockPos().getCenter()))) + "m", Color.WHITE));
         return lines;
     }
@@ -246,8 +281,27 @@ public class TrialSpawnerEspModule extends Module {
             lines.add(new Line("Status: " + title(vaultState.getSerializedName()), Color.WHITE));
         }
 
+        if (showVaultClaimState.get() && blockEntity instanceof VaultBlockEntity vault) {
+            String claimState = vaultClaimState(vault);
+            if (!claimState.isBlank()) lines.add(new Line(claimState, claimState.startsWith("Claimed") ? new Color(255, 95, 95, 255) : new Color(95, 255, 140, 255)));
+        }
+
         if (showDistance.get()) lines.add(new Line("Distance: " + Math.round(Math.sqrt(mc.player.distanceToSqr(blockEntity.getBlockPos().getCenter()))) + "m", Color.WHITE));
         return lines;
+    }
+
+    private String vaultClaimState(VaultBlockEntity vault) {
+        if (mc.player == null) return "";
+
+        try {
+            Set<UUID> rewarded = ((VaultServerDataAccessor) vault.getServerData()).wurstmeteor$getRewardedPlayers();
+            if (rewarded == null) return "";
+            if (rewarded.contains(mc.player.getUUID())) return "Claimed/opened";
+            if (!rewarded.isEmpty()) return "Claimed by " + rewarded.size();
+            return "Unclaimed";
+        } catch (Throwable ignored) {
+            return "";
+        }
     }
 
     private String mobName(CompoundTag tag) {

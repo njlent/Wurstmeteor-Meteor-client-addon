@@ -3,12 +3,14 @@
   "package": "de.njlent.wurstmeteor.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
+    "AbstractContainerScreenMixin",
     "ClientWorldMixin",
     "CreativeInventoryScreenAccessor",
     "EntityRendererMixin",
     "MinecraftClientMixin",
     "MultiPlayerGameModeMixin",
-    "TrialSpawnerStateDataAccessor"
+    "TrialSpawnerStateDataAccessor",
+    "VaultServerDataAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

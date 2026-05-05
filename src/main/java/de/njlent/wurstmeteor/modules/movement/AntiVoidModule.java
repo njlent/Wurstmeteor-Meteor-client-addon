@@ -145,7 +145,7 @@ public class AntiVoidModule extends Module {
 
     private void notifySave(String action) {
         if (!notify.get() || notifiedThisFall) return;
-        warning("AntiVoid saved you: %s.", action);
+        warning("AntiVoid triggered: %s.", action);
         notifiedThisFall = true;
     }
 
