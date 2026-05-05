@@ -47,6 +47,13 @@ public class MobHealthModule extends Module {
         .build()
     );
 
+    private final Setting<Boolean> showHearts = sgGeneral.add(new BoolSetting.Builder()
+        .name("show-hearts")
+        .description("Shows health as hearts instead of a number.")
+        .defaultValue(true)
+        .build()
+    );
+
     public MobHealthModule() {
         super(WurstMeteorAddon.CATEGORY, "mob-health", "Shows health for the mob you are looking at.");
     }
@@ -59,11 +66,24 @@ public class MobHealthModule extends Module {
     }
 
     public Component getDisplayText(Mob mob, MutableComponent existingName) {
-        MutableComponent health = Component.literal(Integer.toString(Math.round(Math.max(0.0F, mob.getHealth())))).withStyle(color(mob.getHealth()));
+        MutableComponent health = showHearts.get() ? hearts(mob) : Component.literal(Integer.toString(Math.round(Math.max(0.0F, mob.getHealth())))).withStyle(color(mob.getHealth()));
         if (!showNames.get()) return health;
 
         MutableComponent name = existingName != null ? existingName.copy() : mob.getName().copy();
         return name.append(Component.literal(" ")).append(health);
+    }
+
+    private MutableComponent hearts(Mob mob) {
+        int health = Math.max(0, Math.round(mob.getHealth()));
+        int maxHealth = Math.max(health, Math.round(mob.getMaxHealth()));
+        int fullHearts = Math.max(1, (int) Math.ceil(health / 2.0));
+        int maxHearts = Math.max(fullHearts, (int) Math.ceil(maxHealth / 2.0));
+        int shownFull = Math.min(fullHearts, 10);
+        int shownEmpty = Math.max(0, Math.min(maxHearts, 10) - shownFull);
+
+        String text = "♥".repeat(shownFull) + "♡".repeat(shownEmpty);
+        if (maxHearts > 10) text += " " + health;
+        return Component.literal(text).withStyle(color(health));
     }
 
     private ChatFormatting color(float health) {
