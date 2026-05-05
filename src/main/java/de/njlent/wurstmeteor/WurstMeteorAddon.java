@@ -29,6 +29,7 @@ import de.njlent.wurstmeteor.modules.render.HealthTagsModule;
 import de.njlent.wurstmeteor.modules.render.ItemEspModule;
 import de.njlent.wurstmeteor.modules.render.PearlEspModule;
 import de.njlent.wurstmeteor.modules.render.TrajectoriesModule;
+import de.njlent.wurstmeteor.modules.render.WardenEspModule;
 import de.njlent.wurstmeteor.modules.world.AutoFarmModule;
 import de.njlent.wurstmeteor.modules.world.AutoLibrarianModule;
 import de.njlent.wurstmeteor.modules.world.AutoMineModule;
@@ -101,6 +102,7 @@ public class WurstMeteorAddon extends MeteorAddon {
         modules.add(new TrajectoriesModule());
         modules.add(new ItemEspModule());
         modules.add(new PearlEspModule());
+        modules.add(new WardenEspModule());
     }
 
     @Override
