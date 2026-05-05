@@ -50,6 +50,13 @@ public class AntiVoidModule extends Module {
         .build()
     );
 
+    private final Setting<Boolean> notify = sgGeneral.add(new BoolSetting.Builder()
+        .name("notify")
+        .description("Warns when AntiVoid rescues you.")
+        .defaultValue(true)
+        .build()
+    );
+
     private final Setting<Integer> lavaBuffer = sgGeneral.add(new IntSetting.Builder()
         .name("lava-buffer")
         .description("Blocks above lava to trigger rescue.")
@@ -63,6 +70,7 @@ public class AntiVoidModule extends Module {
     private boolean airWalkActive;
     private double airWalkY;
     private boolean jumpWasDown;
+    private boolean notifiedThisFall;
 
     public AntiVoidModule() {
         super(WurstMeteorAddon.CATEGORY, "anti-void", "Prevents falling into the void or lava.");
@@ -74,6 +82,7 @@ public class AntiVoidModule extends Module {
         airWalkActive = false;
         airWalkY = Double.NaN;
         jumpWasDown = false;
+        notifiedThisFall = false;
     }
 
     @Override
@@ -81,6 +90,7 @@ public class AntiVoidModule extends Module {
         airWalkActive = false;
         airWalkY = Double.NaN;
         jumpWasDown = false;
+        notifiedThisFall = false;
     }
 
     @EventHandler
@@ -91,9 +101,13 @@ public class AntiVoidModule extends Module {
             airWalkActive = false;
             airWalkY = Double.NaN;
             jumpWasDown = false;
+            notifiedThisFall = false;
         }
 
-        if (mc.player.onGround() && !mc.player.isInWater() && !mc.player.isInLava()) lastSafePos = mc.player.position();
+        if (mc.player.onGround() && !mc.player.isInWater() && !mc.player.isInLava()) {
+            lastSafePos = mc.player.position();
+            notifiedThisFall = false;
+        }
         if (mc.player.isFallFlying()) return;
 
         if (airWalkActive) {
@@ -107,6 +121,7 @@ public class AntiVoidModule extends Module {
         if (useFlight.get()) {
             Flight flight = Modules.get().get(Flight.class);
             if (flight != null && !flight.isActive()) flight.toggle();
+            notifySave("enabled Flight");
             return;
         }
 
@@ -114,6 +129,7 @@ public class AntiVoidModule extends Module {
             airWalkActive = true;
             airWalkY = mc.player.getY();
             applyAirWalk();
+            notifySave("started AirWalk");
             return;
         }
 
@@ -124,6 +140,13 @@ public class AntiVoidModule extends Module {
         mc.player.setOnGround(true);
         mc.player.setPos(lastSafePos.x, lastSafePos.y, lastSafePos.z);
         mc.player.connection.send(new ServerboundMovePlayerPacket.Pos(lastSafePos.x, lastSafePos.y, lastSafePos.z, true, mc.player.horizontalCollision));
+        notifySave("returned to the last safe position");
+    }
+
+    private void notifySave(String action) {
+        if (!notify.get() || notifiedThisFall) return;
+        warning("AntiVoid saved you: %s.", action);
+        notifiedThisFall = true;
     }
 
     private void applyAirWalk() {
