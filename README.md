@@ -12,7 +12,7 @@
 </div>
 <br/>
 
-A [Meteor Client](https://github.com/MeteorDevelopment/meteor-client) addon that ports selected [Wurst Client](https://github.com/Wurst-Imperium/Wurst7) features to Meteor.
+A [Meteor Client](https://github.com/MeteorDevelopment/meteor-client) addon that ports selected [Wurst Client](https://github.com/Wurst-Imperium/Wurst7) and [Wurst CevAPI](https://github.com/cev-api/Wurst7-CevAPI) features to Meteor.
 
 ## Supported versions (check branches for legacy versions): 
 - **Minecraft 26.1.2 ([latest](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases))**
@@ -24,13 +24,21 @@ A [Meteor Client](https://github.com/MeteorDevelopment/meteor-client) addon that
 ## Included Modules
 
 - `AntiSpam`
+- `AntiVoid`
 - `ArrowDMG`
 - `AutoFarm`
 - `AutoLibrarian`
 - `AutoMine`
+- `AutoTrader`
 - `BarrierESP`
+- `BeaconExploit`
+- `BedrockStash`
+- `CommandScanner`
 - `PotionSaver`
 - `CreativeFlight`
+- `DamageDetect`
+- `ExtraElytra`
+- `InfiniteReach`
 - `InvWalk`
 - `Trajectories`
 - `HealthTags`
@@ -41,6 +49,8 @@ A [Meteor Client](https://github.com/MeteorDevelopment/meteor-client) addon that
 - `BonemealAura`
 - `Criticals`
 - `ItemESP`
+- `SpeedHack`
+- `TargetPlace`
 - `TreeBot`
 
 ## Stack
@@ -69,6 +79,8 @@ Output jar:
 - Package root: `de.njlent.wurstmeteor`
 - Module source split:
   - `modules/combat`
+  - `modules/misc`
+  - `modules/movement`
   - `modules/world`
   - `modules/render`
 
