@@ -14,6 +14,7 @@ import de.njlent.wurstmeteor.modules.misc.AutoStealModule;
 import de.njlent.wurstmeteor.modules.misc.BeaconExploitModule;
 import de.njlent.wurstmeteor.modules.misc.CommandScannerModule;
 import de.njlent.wurstmeteor.modules.misc.DamageDetectModule;
+import de.njlent.wurstmeteor.modules.misc.XCarryModule;
 import de.njlent.wurstmeteor.modules.movement.AntiVoidModule;
 import de.njlent.wurstmeteor.modules.movement.CreativeFlightModule;
 import de.njlent.wurstmeteor.modules.movement.ExtraElytraModule;
@@ -76,6 +77,7 @@ public class WurstMeteorAddon extends MeteorAddon {
         modules.add(new AutoStealModule());
         modules.add(new CommandScannerModule());
         modules.add(new DamageDetectModule());
+        modules.add(new XCarryModule());
         modules.add(new PotionSaverModule());
         modules.add(new AntiVoidModule());
         modules.add(new CreativeFlightModule());
