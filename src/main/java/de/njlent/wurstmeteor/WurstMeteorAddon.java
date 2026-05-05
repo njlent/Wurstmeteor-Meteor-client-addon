@@ -32,6 +32,7 @@ import de.njlent.wurstmeteor.modules.render.AntiBlindModule;
 import de.njlent.wurstmeteor.modules.render.AntiWobbleModule;
 import de.njlent.wurstmeteor.modules.render.HealthTagsModule;
 import de.njlent.wurstmeteor.modules.render.ItemEspModule;
+import de.njlent.wurstmeteor.modules.render.MobHealthModule;
 import de.njlent.wurstmeteor.modules.render.PearlEspModule;
 import de.njlent.wurstmeteor.modules.render.PlayerSonarModule;
 import de.njlent.wurstmeteor.modules.render.TrajectoriesModule;
@@ -114,6 +115,7 @@ public class WurstMeteorAddon extends MeteorAddon {
         modules.add(new TrajectoriesModule());
         modules.add(new TrialSpawnerEspModule());
         modules.add(new ItemEspModule());
+        modules.add(new MobHealthModule());
         modules.add(new PearlEspModule());
         modules.add(new PlayerSonarModule());
         modules.add(new WardenEspModule());
