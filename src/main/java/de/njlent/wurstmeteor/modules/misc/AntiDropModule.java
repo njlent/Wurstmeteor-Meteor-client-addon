@@ -2,6 +2,7 @@ package de.njlent.wurstmeteor.modules.misc;
 
 import de.njlent.wurstmeteor.WurstMeteorAddon;
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
+import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.ItemListSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
@@ -16,6 +17,13 @@ import java.util.List;
 
 public class AntiDropModule extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
+
+    private final Setting<Boolean> protectEnchantedGear = sgGeneral.add(new BoolSetting.Builder()
+        .name("protect-enchanted-gear")
+        .description("Also blocks dropping enchanted damageable gear and tools, even if it is not in the item list.")
+        .defaultValue(true)
+        .build()
+    );
 
     private final Setting<List<Item>> protectedItems = sgGeneral.add(new ItemListSetting.Builder()
         .name("protected-items")
@@ -48,11 +56,18 @@ public class AntiDropModule extends Module {
 
         if (shouldBlock(mc.player.getMainHandItem())) {
             event.cancel();
-            warning("Blocked dropping %s.", mc.player.getMainHandItem().getHoverName().getString());
+            warnBlocked(mc.player.getMainHandItem());
         }
     }
 
     public boolean shouldBlock(ItemStack stack) {
-        return isActive() && stack != null && !stack.isEmpty() && protectedItems.get().contains(stack.getItem());
+        if (!isActive() || stack == null || stack.isEmpty()) return false;
+        if (protectedItems.get().contains(stack.getItem())) return true;
+        return protectEnchantedGear.get() && stack.isEnchanted() && stack.isDamageableItem();
+    }
+
+    public void warnBlocked(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return;
+        warning("Blocked dropping %s.", stack.getHoverName().getString());
     }
 }

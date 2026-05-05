@@ -26,6 +26,9 @@ public class MultiPlayerGameModeMixin {
         if (slotId < 0 || slotId >= menu.slots.size()) return;
 
         Slot slot = menu.slots.get(slotId);
-        if (antiDrop.shouldBlock(slot.getItem())) ci.cancel();
+        if (antiDrop.shouldBlock(slot.getItem())) {
+            antiDrop.warnBlocked(slot.getItem());
+            ci.cancel();
+        }
     }
 }
