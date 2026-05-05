@@ -6,7 +6,8 @@
     "ClientWorldMixin",
     "CreativeInventoryScreenAccessor",
     "EntityRendererMixin",
-    "MinecraftClientMixin"
+    "MinecraftClientMixin",
+    "MultiPlayerGameModeMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -7,6 +7,7 @@ import de.njlent.wurstmeteor.modules.combat.InfiniteReachModule;
 import de.njlent.wurstmeteor.modules.combat.MaceDmgModule;
 import de.njlent.wurstmeteor.modules.combat.MultiAuraModule;
 import de.njlent.wurstmeteor.modules.misc.AntiSpamModule;
+import de.njlent.wurstmeteor.modules.misc.AntiDropModule;
 import de.njlent.wurstmeteor.modules.misc.AutoTraderModule;
 import de.njlent.wurstmeteor.modules.misc.BeaconExploitModule;
 import de.njlent.wurstmeteor.modules.misc.CommandScannerModule;
@@ -68,6 +69,7 @@ public class WurstMeteorAddon extends MeteorAddon {
         modules.add(new ArrowDmgModule());
         modules.add(new InfiniteReachModule());
         modules.add(new AntiSpamModule());
+        modules.add(new AntiDropModule());
         modules.add(new CommandScannerModule());
         modules.add(new DamageDetectModule());
         modules.add(new PotionSaverModule());
