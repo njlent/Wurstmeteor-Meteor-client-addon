@@ -8,6 +8,7 @@ import de.njlent.wurstmeteor.modules.combat.MaceDmgModule;
 import de.njlent.wurstmeteor.modules.combat.MultiAuraModule;
 import de.njlent.wurstmeteor.modules.misc.AntiSpamModule;
 import de.njlent.wurstmeteor.modules.misc.AntiDropModule;
+import de.njlent.wurstmeteor.modules.misc.AntiCheatDetectModule;
 import de.njlent.wurstmeteor.modules.misc.AutoTraderModule;
 import de.njlent.wurstmeteor.modules.misc.AutoDropModule;
 import de.njlent.wurstmeteor.modules.misc.AutoStealModule;
@@ -70,6 +71,7 @@ public class WurstMeteorAddon extends MeteorAddon {
         });
 
         Modules modules = Modules.get();
+        modules.add(new AntiCheatDetectModule());
         modules.add(new AutoFarmModule());
         modules.add(new AutoLibrarianModule());
         modules.add(new AutoMineModule());
