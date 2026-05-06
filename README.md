@@ -1,5 +1,7 @@
 <div align="center">
- <h1> <img src="img/icon.png" width="200px"><br/>Wurstmeteor Addon</h1>
+ <h1> <img style="text-align:center" src="img/artwork02.jpg"><br><br>Wurstmeteor Addon</h1>
+
+<!-- <h1> <img src="img/icon.png" width="200px"><br/>Wurstmeteor Addon</h1>-->
 
  <img src="https://img.shields.io/badge/Meteor Client Addon-6f1ab1?logo=meteor&logoColor=white"/> 
  <br>
@@ -64,7 +66,3 @@ The implementation is structured for easy extension: each module is isolated and
 >     </td>
 >   </tr>
 > </table>
-
-
-<br>
-<img style="text-align:center" src="img/artwork02.jpg">
