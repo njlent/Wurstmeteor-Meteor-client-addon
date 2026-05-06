@@ -5,6 +5,7 @@ import de.njlent.wurstmeteor.modules.render.MobHealthModule;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.world.entity.EntityAttachment;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -22,8 +23,9 @@ public abstract class EntityRendererMixin<T extends Entity, S extends EntityRend
 
         if (entity instanceof Mob mob) {
             MobHealthModule mobHealth = Modules.get().get(MobHealthModule.class);
-            if (mobHealth != null && mobHealth.shouldDisplayFor(mob)) {
+            if (mobHealth != null && mobHealth.shouldDisplayFor(mob) && mobHealth.shouldForceNameTag()) {
                 state.nameTag = mobHealth.getDisplayText(mob, state.nameTag == null ? null : state.nameTag.copy());
+                state.nameTagAttachment = mob.getAttachments().getNullable(EntityAttachment.NAME_TAG, 0, mob.getYRot(tickProgress));
                 return;
             }
         }

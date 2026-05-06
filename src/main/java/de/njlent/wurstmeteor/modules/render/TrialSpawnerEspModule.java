@@ -2,10 +2,12 @@ package de.njlent.wurstmeteor.modules.render;
 
 import de.njlent.wurstmeteor.WurstMeteorAddon;
 import de.njlent.wurstmeteor.mixin.TrialSpawnerStateDataAccessor;
-import de.njlent.wurstmeteor.mixin.VaultServerDataAccessor;
+import de.njlent.wurstmeteor.mixin.VaultSharedDataAccessor;
 import de.njlent.wurstmeteor.util.BlockEntityUtils;
+import meteordevelopment.meteorclient.events.entity.player.InteractBlockEvent;
 import meteordevelopment.meteorclient.events.render.Render2DEvent;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
+import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.renderer.ShapeMode;
 import meteordevelopment.meteorclient.renderer.text.TextRenderer;
 import meteordevelopment.meteorclient.settings.*;
@@ -31,14 +33,20 @@ import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerStateData
 import net.minecraft.world.level.block.entity.vault.VaultState;
 import net.minecraft.world.level.block.entity.vault.VaultBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3d;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 public class TrialSpawnerEspModule extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -131,6 +139,13 @@ public class TrialSpawnerEspModule extends Module {
         .build()
     );
 
+    private final Setting<Boolean> triggerBoxThroughWalls = sgGeneral.add(new BoolSetting.Builder()
+        .name("trigger-box-through-walls")
+        .description("Shows the trigger box even when the spawner is behind blocks.")
+        .defaultValue(true)
+        .build()
+    );
+
     private final Setting<Boolean> showVaultClaimState = sgGeneral.add(new BoolSetting.Builder()
         .name("show-vault-claim-state")
         .description("Shows whether the current player has claimed/opened a vault when server data is available.")
@@ -153,6 +168,8 @@ public class TrialSpawnerEspModule extends Module {
     );
 
     private int count;
+    private final Set<String> openedVaults = new HashSet<>();
+    private final Map<String, PendingVaultCheck> pendingVaultChecks = new HashMap<>();
 
     public TrialSpawnerEspModule() {
         super(WurstMeteorAddon.CATEGORY, "trial-spawner-esp", "Highlights trial spawners and vaults in loaded chunks.");
@@ -161,6 +178,44 @@ public class TrialSpawnerEspModule extends Module {
     @Override
     public String getInfoString() {
         return count == 0 ? null : Integer.toString(count);
+    }
+
+    @Override
+    public void onDeactivate() {
+        pendingVaultChecks.clear();
+    }
+
+    @EventHandler
+    private void onTick(TickEvent.Pre event) {
+        if (mc.player == null || mc.level == null) return;
+
+        long now = mc.level.getGameTime();
+        pendingVaultChecks.entrySet().removeIf(entry -> {
+            PendingVaultCheck check = entry.getValue();
+            if (now < check.checkAt()) return false;
+
+            BlockState state = mc.level.getBlockState(check.pos());
+            VaultState after = state.hasProperty(VaultBlock.STATE) ? state.getValue(VaultBlock.STATE) : null;
+            if (check.before() == VaultState.INACTIVE && after == VaultState.INACTIVE) openedVaults.add(entry.getKey());
+            return true;
+        });
+
+        for (BlockEntity blockEntity : BlockEntityUtils.getLoadedBlockEntities(mc.level, mc.player.blockPosition(), chunkRadius.get())) {
+            if (blockEntity.getType() != BlockEntityType.VAULT) continue;
+            BlockState state = mc.level.getBlockState(blockEntity.getBlockPos());
+            if (state.hasProperty(VaultBlock.STATE) && state.getValue(VaultBlock.STATE) == VaultState.EJECTING) openedVaults.add(vaultKey(blockEntity.getBlockPos()));
+        }
+    }
+
+    @EventHandler
+    private void onInteractBlock(InteractBlockEvent event) {
+        if (mc.player == null || mc.level == null || event.result == null) return;
+
+        BlockState state = mc.level.getBlockState(event.result.getBlockPos());
+        if (!state.is(Blocks.VAULT) || !state.hasProperty(VaultBlock.STATE)) return;
+
+        String key = vaultKey(event.result.getBlockPos());
+        pendingVaultChecks.put(key, new PendingVaultCheck(event.result.getBlockPos().immutable(), state.getValue(VaultBlock.STATE), mc.level.getGameTime() + 30));
     }
 
     @EventHandler
@@ -179,7 +234,7 @@ public class TrialSpawnerEspModule extends Module {
             AABB box = new AABB(blockEntity.getBlockPos());
             event.renderer.box(box, side, line, ShapeMode.Both, 0);
 
-            if (spawner && showTriggerBox.get() && blockEntity instanceof TrialSpawnerBlockEntity trialSpawner) {
+            if (spawner && showTriggerBox.get() && (triggerBoxThroughWalls.get() || canSeeBlock(blockEntity)) && blockEntity instanceof TrialSpawnerBlockEntity trialSpawner) {
                 int range = trialSpawner.getTrialSpawner().getRequiredPlayerRange();
                 if (range > 0) {
                     AABB triggerBox = new AABB(blockEntity.getBlockPos()).inflate(range);
@@ -283,7 +338,7 @@ public class TrialSpawnerEspModule extends Module {
 
         if (showVaultClaimState.get() && blockEntity instanceof VaultBlockEntity vault) {
             String claimState = vaultClaimState(vault);
-            if (!claimState.isBlank()) lines.add(new Line(claimState, claimState.startsWith("Claimed") ? new Color(255, 95, 95, 255) : new Color(95, 255, 140, 255)));
+            if (!claimState.isBlank()) lines.add(new Line(claimState, claimColor(claimState)));
         }
 
         if (showDistance.get()) lines.add(new Line("Distance: " + Math.round(Math.sqrt(mc.player.distanceToSqr(blockEntity.getBlockPos().getCenter()))) + "m", Color.WHITE));
@@ -294,14 +349,34 @@ public class TrialSpawnerEspModule extends Module {
         if (mc.player == null) return "";
 
         try {
-            Set<UUID> rewarded = ((VaultServerDataAccessor) vault.getServerData()).wurstmeteor$getRewardedPlayers();
-            if (rewarded == null) return "";
-            if (rewarded.contains(mc.player.getUUID())) return "Claimed/opened";
-            if (!rewarded.isEmpty()) return "Claimed by " + rewarded.size();
-            return "Unclaimed";
+            if (openedVaults.contains(vaultKey(vault.getBlockPos()))) return "Claimed/opened";
+
+            Set<?> connected = ((VaultSharedDataAccessor) vault.getSharedData()).wurstmeteor$getConnectedPlayers();
+            if (connected != null && connected.contains(mc.player.getUUID())) return "Unclaimed";
+            return "Claim unknown";
         } catch (Throwable ignored) {
             return "";
         }
+    }
+
+    private Color claimColor(String claimState) {
+        if (claimState.startsWith("Claimed")) return new Color(255, 95, 95, 255);
+        if (claimState.startsWith("Unclaimed")) return new Color(95, 255, 140, 255);
+        return new Color(180, 180, 180, 255);
+    }
+
+    private boolean canSeeBlock(BlockEntity blockEntity) {
+        if (mc.player == null || mc.level == null) return true;
+
+        Vec3 from = mc.gameRenderer.getMainCamera().position();
+        Vec3 to = blockEntity.getBlockPos().getCenter();
+        BlockHitResult hit = mc.level.clip(new ClipContext(from, to, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, mc.player));
+        return hit.getType() == HitResult.Type.MISS || hit.getBlockPos().equals(blockEntity.getBlockPos());
+    }
+
+    private String vaultKey(net.minecraft.core.BlockPos pos) {
+        String dimension = mc.level == null ? "unknown" : mc.level.dimension().identifier().toString();
+        return dimension + "|" + pos.getX() + "," + pos.getY() + "," + pos.getZ();
     }
 
     private String mobName(CompoundTag tag) {
@@ -344,4 +419,5 @@ public class TrialSpawnerEspModule extends Module {
     }
 
     private record Line(String text, Color color) {}
+    private record PendingVaultCheck(net.minecraft.core.BlockPos pos, VaultState before, long checkAt) {}
 }

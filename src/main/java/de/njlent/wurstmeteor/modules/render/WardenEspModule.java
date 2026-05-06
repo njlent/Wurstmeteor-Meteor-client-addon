@@ -159,8 +159,6 @@ public class WardenEspModule extends Module {
         boolean sonicCharge = warden.getBrain().getTimeUntilExpiry(MemoryModuleType.SONIC_BOOM_SOUND_DELAY) > 0;
         boolean attacking = sonicCharge || warden.attackAnimationState.isStarted() || warden.sonicBoomAnimationState.isStarted();
 
-        if (attacking) lines.add(new Line("ATTACK", new Color(255, 65, 65, 255)));
-
         String state = stateName(angerLevel, anger, pose, hasTarget);
         lines.add(new Line(state, stateColor(angerLevel, anger, pose, hasTarget, attacking)));
 

@@ -31,10 +31,11 @@ import java.util.Locale;
 import java.util.Set;
 
 public class EnchantmentHelperModule extends Module {
-    private static final int PANEL_WIDTH = 184;
+    private static final int PANEL_WIDTH = 260;
     private static final int PANEL_PADDING = 5;
-    private static final int ROW_HEIGHT = 24;
-    private static final int BUTTON_WIDTH = 28;
+    private static final int ROW_HEIGHT = 18;
+    private static final int BUTTON_WIDTH = 34;
+    private static final float TEXT_SCALE = 0.78F;
 
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
@@ -62,9 +63,9 @@ public class EnchantmentHelperModule extends Module {
     private final Setting<Integer> maxLines = sgGeneral.add(new IntSetting.Builder()
         .name("max-lines")
         .description("Maximum visible lines in the panel.")
-        .defaultValue(12)
+        .defaultValue(20)
         .range(1, 50)
-        .sliderRange(3, 25)
+        .sliderRange(3, 30)
         .build()
     );
 
@@ -110,7 +111,6 @@ public class EnchantmentHelperModule extends Module {
             return;
         }
 
-        if (screen == lastScreen && !currentEntries.isEmpty()) return;
         lastScreen = screen;
 
         List<Entry> entries = scan(screen);
@@ -122,7 +122,8 @@ public class EnchantmentHelperModule extends Module {
         if (mc.player == null || currentEntries.isEmpty()) return;
         if (!hasExternalSlots(screen)) return;
 
-        visibleRows = Math.min(maxLines.get(), currentEntries.size());
+        int maxRowsForScreen = Math.max(1, (graphics.guiHeight() - PANEL_PADDING * 2 - 16) / ROW_HEIGHT);
+        visibleRows = Math.min(Math.min(maxLines.get(), maxRowsForScreen), currentEntries.size());
         int panelHeight = PANEL_PADDING * 2 + 12 + visibleRows * ROW_HEIGHT;
         panelX = 6;
         panelY = Math.max(4, (graphics.guiHeight() - panelHeight) / 2);
@@ -147,15 +148,15 @@ public class EnchantmentHelperModule extends Module {
             if (hovered) graphics.fill(panelX + 1, rowY, panelX + PANEL_WIDTH - 1, rowY + ROW_HEIGHT, 0x303A4A70);
 
             graphics.item(entry.stack(), panelX + PANEL_PADDING, rowY + 4);
-            String text = trimToWidth(entry.enchantments(), PANEL_WIDTH - PANEL_PADDING * 3 - 16 - BUTTON_WIDTH - 6);
-            graphics.text(mc.font, text, panelX + PANEL_PADDING + 21, rowY + 8, color, true);
+            String text = trimToWidth(entry.enchantments(), PANEL_WIDTH - PANEL_PADDING * 3 - 16 - BUTTON_WIDTH - 8);
+            drawSmallText(graphics, text, panelX + PANEL_PADDING + 21, rowY + 5, color);
 
             int buttonX = panelX + PANEL_WIDTH - PANEL_PADDING - BUTTON_WIDTH;
-            int buttonY = rowY + 5;
+            int buttonY = rowY + 3;
             int buttonColor = entry.slotIndex() >= 0 ? 0xB0253348 : 0x70252525;
-            graphics.fill(buttonX, buttonY, buttonX + BUTTON_WIDTH, buttonY + 14, buttonColor);
-            graphics.outline(buttonX, buttonY, BUTTON_WIDTH, 14, entry.slotIndex() >= 0 ? 0xFF7FA4FF : 0xFF666666);
-            graphics.text(mc.font, "Take", buttonX + 3, buttonY + 3, entry.slotIndex() >= 0 ? 0xFFEDEDED : 0xFF777777, true);
+            graphics.fill(buttonX, buttonY, buttonX + BUTTON_WIDTH, buttonY + 12, buttonColor);
+            graphics.outline(buttonX, buttonY, BUTTON_WIDTH, 12, entry.slotIndex() >= 0 ? 0xFF7FA4FF : 0xFF666666);
+            drawSmallText(graphics, "Take", buttonX + 5, buttonY + 2, entry.slotIndex() >= 0 ? 0xFFEDEDED : 0xFF777777);
 
             rowY += ROW_HEIGHT;
         }
@@ -174,8 +175,8 @@ public class EnchantmentHelperModule extends Module {
         for (int i = 0; i < visibleRows && i < currentEntries.size(); i++) {
             Entry entry = currentEntries.get(i);
             int buttonX = panelX + PANEL_WIDTH - PANEL_PADDING - BUTTON_WIDTH;
-            int buttonY = rowY + 5;
-            if (mouseX >= buttonX && mouseX <= buttonX + BUTTON_WIDTH && mouseY >= buttonY && mouseY <= buttonY + 14) {
+            int buttonY = rowY + 3;
+            if (mouseX >= buttonX && mouseX <= buttonX + BUTTON_WIDTH && mouseY >= buttonY && mouseY <= buttonY + 12) {
                 if (entry.slotIndex() >= 0) {
                     mc.gameMode.handleContainerInput(screen.getMenu().containerId, entry.slotIndex(), 0, ContainerInput.QUICK_MOVE, mc.player);
                     currentEntries = scan(screen);
@@ -200,7 +201,7 @@ public class EnchantmentHelperModule extends Module {
 
             ItemStack stack = slot.getItem();
             if (stack.isEmpty()) continue;
-            collectStack(entries, stack, slot.index, slot.getContainerSlot() + 1, playerSlot ? "Inv" : "Box");
+            collectStack(entries, stack, playerSlot ? -1 : slot.index, slot.getContainerSlot() + 1, playerSlot ? "Inv" : "Box");
         }
 
         return entries;
@@ -275,16 +276,25 @@ public class EnchantmentHelperModule extends Module {
     }
 
     private String trimToWidth(String text, int width) {
-        if (mc.font.width(text) <= width) return text;
+        int scaledWidth = Math.round(width / TEXT_SCALE);
+        if (mc.font.width(text) <= scaledWidth) return text;
         String suffix = "...";
         int suffixWidth = mc.font.width(suffix);
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < text.length(); i++) {
-            if (mc.font.width(builder.toString() + text.charAt(i)) + suffixWidth > width) break;
+            if (mc.font.width(builder.toString() + text.charAt(i)) + suffixWidth > scaledWidth) break;
             builder.append(text.charAt(i));
         }
 
         return builder + suffix;
+    }
+
+    private void drawSmallText(GuiGraphicsExtractor graphics, String text, int x, int y, int color) {
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(x, y);
+        graphics.pose().scale(TEXT_SCALE, TEXT_SCALE);
+        graphics.text(mc.font, text, 0, 0, color, true);
+        graphics.pose().popMatrix();
     }
 
     private record Entry(String category, int slotIndex, int slot, ItemStack stack, String source, String enchantments) {}

@@ -10,7 +10,8 @@
     "MinecraftClientMixin",
     "MultiPlayerGameModeMixin",
     "TrialSpawnerStateDataAccessor",
-    "VaultServerDataAccessor"
+    "VaultServerDataAccessor",
+    "VaultSharedDataAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
