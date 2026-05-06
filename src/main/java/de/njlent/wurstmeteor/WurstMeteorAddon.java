@@ -29,7 +29,6 @@ import de.njlent.wurstmeteor.modules.movement.SpeedHackModule;
 import de.njlent.wurstmeteor.modules.player.PotionSaverModule;
 import de.njlent.wurstmeteor.modules.render.BarrierEspModule;
 import de.njlent.wurstmeteor.modules.render.BedrockStashModule;
-import de.njlent.wurstmeteor.modules.render.ChestSearchModule;
 import de.njlent.wurstmeteor.modules.render.AntiBlindModule;
 import de.njlent.wurstmeteor.modules.render.AntiWobbleModule;
 import de.njlent.wurstmeteor.modules.render.HealthTagsModule;
@@ -114,7 +113,6 @@ public class WurstMeteorAddon extends MeteorAddon {
         modules.add(new AntiWobbleModule());
         modules.add(new BarrierEspModule());
         modules.add(new BedrockStashModule());
-        modules.add(new ChestSearchModule());
         modules.add(new HealthTagsModule());
         modules.add(new TrajectoriesModule());
         modules.add(new TrialSpawnerEspModule());
