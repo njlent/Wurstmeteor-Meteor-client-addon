@@ -175,7 +175,7 @@ public class EnchantmentHelperModule extends Module {
             Entry entry = currentEntries.get(i);
             boolean ranked = isRanked(entry);
             Tier tier = ranked ? entry.tier() : Tier.Enchanted;
-            int color = ranked ? tier.textColor : categoryColor(entry.category());
+            int color = ranked ? tier.textColor : categoryColor(entry);
 
             boolean hovered = mouseX >= panelX && mouseX <= panelX + currentPanelWidth && mouseY >= rowY && mouseY < rowY + ROW_HEIGHT;
             if (ranked) graphics.fill(panelX + 1, rowY, panelX + currentPanelWidth - 1, rowY + ROW_HEIGHT, tier.backgroundColor);
@@ -356,6 +356,8 @@ public class EnchantmentHelperModule extends Module {
         if (enchantments.isEmpty()) return Tier.None;
         if (hasCurse(enchantments)) return Tier.Cursed;
         if (isIllegal(stack, enchantments)) return Tier.Illegal;
+        boolean allPresentMax = enchantments.stream().allMatch(enchantment -> enchantment.level() >= enchantment.maxLevel());
+        if (stack.is(Items.ENCHANTED_BOOK) && allPresentMax) return Tier.Maxed;
 
         Map<String, Integer> levels = levelsById(enchantments);
         PerfectSpec spec = stack.is(Items.ENCHANTED_BOOK) ? null : perfectSpec(stack);
@@ -369,7 +371,6 @@ public class EnchantmentHelperModule extends Module {
         if (isSingleMending(enchantments)) return Tier.Strong;
         if (enchantments.size() == 1) return Tier.Enchanted;
 
-        boolean allPresentMax = enchantments.stream().allMatch(enchantment -> enchantment.level() >= enchantment.maxLevel());
         double ratio = enchantments.stream().mapToDouble(enchantment -> Math.min(1.0, enchantment.level() / (double) Math.max(1, enchantment.maxLevel()))).average().orElse(0.0);
         if (allPresentMax && enchantments.size() >= 3) return Tier.Maxed;
         return ratio >= 0.65 ? Tier.Strong : Tier.Enchanted;
@@ -500,8 +501,9 @@ public class EnchantmentHelperModule extends Module {
         return required(values);
     }
 
-    private int categoryColor(String category) {
-        return switch (category) {
+    private int categoryColor(Entry entry) {
+        if (entry.stack().is(Items.ENCHANTED_BOOK) && entry.tier() == Tier.Maxed) return Tier.Maxed.textColor;
+        return switch (entry.category()) {
             case "Book" -> 0xFF7FD7FF;
             case "Cursed" -> 0xFFEDEDED;
             case "Weapon" -> 0xFFFF8888;
