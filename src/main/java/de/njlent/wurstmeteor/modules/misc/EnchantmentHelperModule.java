@@ -249,6 +249,7 @@ public class EnchantmentHelperModule extends Module {
     private void sortEntries(List<Entry> entries) {
         Comparator<Entry> comparator = Comparator.comparing(Entry::category).thenComparing(Entry::slot);
         if (rankItems.get()) comparator = Comparator.comparingInt((Entry entry) -> entry.tier().ordinal()).thenComparing(comparator);
+        comparator = Comparator.comparingInt((Entry entry) -> entry.tier() == Tier.Cursed ? 1 : 0).thenComparing(comparator);
         entries.sort(comparator);
     }
 
@@ -256,7 +257,7 @@ public class EnchantmentHelperModule extends Module {
         if (!booksOnly.get() || stack.is(Items.ENCHANTED_BOOK)) {
             List<EnchantData> enchantments = enchantments(stack);
             String enchants = enchantmentText(enchantments);
-            if (!enchants.isEmpty()) entries.add(new Entry(category(stack), slotIndex, slot, stack.copy(), source + " #" + slot, enchants, tier(stack, enchantments)));
+            if (!enchants.isEmpty()) entries.add(new Entry(category(stack, enchantments), slotIndex, slot, stack.copy(), source + " #" + slot, enchants, tier(stack, enchantments)));
         }
 
         if (!includeShulkerContents.get()) return;
@@ -274,7 +275,7 @@ public class EnchantmentHelperModule extends Module {
 
             List<EnchantData> enchantments = enchantments(child);
             String enchants = enchantmentText(enchantments);
-            if (!enchants.isEmpty()) entries.add(new Entry("Shulker", -1, slot, child.copy(), source + " #" + slot + "." + childSlot, enchants, tier(child, enchantments)));
+            if (!enchants.isEmpty()) entries.add(new Entry(category(child, enchantments, "Shulker"), -1, slot, child.copy(), source + " #" + slot + "." + childSlot, enchants, tier(child, enchantments)));
             childSlot++;
         }
     }
@@ -300,7 +301,13 @@ public class EnchantmentHelperModule extends Module {
         return String.join(", ", parts);
     }
 
-    private String category(ItemStack stack) {
+    private String category(ItemStack stack, List<EnchantData> enchantments) {
+        return category(stack, enchantments, null);
+    }
+
+    private String category(ItemStack stack, List<EnchantData> enchantments, String fallback) {
+        if (hasCurse(enchantments)) return "Cursed";
+        if (fallback != null) return fallback;
         if (stack.is(Items.ENCHANTED_BOOK)) return "Book";
         if (stack.getItem().components().has(DataComponents.WEAPON)) return "Weapon";
         return "Gear";
@@ -320,6 +327,7 @@ public class EnchantmentHelperModule extends Module {
 
     private Tier tier(ItemStack stack, List<EnchantData> enchantments) {
         if (enchantments.isEmpty()) return Tier.None;
+        if (hasCurse(enchantments)) return Tier.Cursed;
         if (isIllegal(stack, enchantments)) return Tier.Illegal;
 
         Map<String, Integer> levels = levelsById(enchantments);
@@ -353,6 +361,10 @@ public class EnchantmentHelperModule extends Module {
         }
 
         return false;
+    }
+
+    private boolean hasCurse(List<EnchantData> enchantments) {
+        return enchantments.stream().anyMatch(enchantment -> enchantment.id().equals("binding_curse") || enchantment.id().equals("vanishing_curse"));
     }
 
     private Map<String, Integer> levelsById(List<EnchantData> enchantments) {
@@ -464,6 +476,7 @@ public class EnchantmentHelperModule extends Module {
     private int categoryColor(String category) {
         return switch (category) {
             case "Book" -> 0xFF7FD7FF;
+            case "Cursed" -> 0xFFFF66D8;
             case "Weapon" -> 0xFFFF8888;
             case "Shulker" -> 0xFFD9A8FF;
             default -> 0xFFFFD66E;
@@ -538,6 +551,7 @@ public class EnchantmentHelperModule extends Module {
         Maxed("[MAX]", 0xFF7FFFD0, 0x40208070, 0x6040A080, 0xFF66FFD0),
         Strong("[GOOD]", 0xFF9AFF9A, 0x30208030, 0x5040A050, 0xFF60FF80),
         Enchanted("[ENCH]", 0xFFFFD66E, 0x201A1A1A, 0x303A4A70, 0xFFFFD66E),
+        Cursed("[CURSED]", 0xFFFF66D8, 0x40200035, 0x70450060, 0xFFFF33CC),
         None("", 0xFFEDEDED, 0x00000000, 0x303A4A70, 0xFFEDEDED);
 
         private final String label;
