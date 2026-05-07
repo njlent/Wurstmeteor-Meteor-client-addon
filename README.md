@@ -47,7 +47,10 @@ A [Meteor Client](https://github.com/MeteorDevelopment/meteor-client) addon that
   - `modules/movement`
   - `...`
 
-The implementation is structured for easy extension: each module is isolated and uses Meteor-native events/utilities.
+The implementation is structured for easy extension: each module is isolated and uses Meteor-native events/utilities. 
+<br>
+<br>
+If you have suggestions, find bugs or are missing modules you want added - feel free to open an <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/issues">issue</a>.
 
 <br>
 <br>
