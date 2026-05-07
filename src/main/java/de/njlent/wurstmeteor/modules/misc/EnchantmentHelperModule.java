@@ -38,6 +38,7 @@ public class EnchantmentHelperModule extends Module {
     private static final int PANEL_PADDING = 5;
     private static final int ROW_HEIGHT = 18;
     private static final int BUTTON_WIDTH = 34;
+    private static final int MIN_PANEL_WIDTH = PANEL_PADDING * 2 + 16 + 4 + BUTTON_WIDTH;
     private static final float TEXT_SCALE = 0.78F;
 
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -97,8 +98,8 @@ public class EnchantmentHelperModule extends Module {
         .name("panel-width")
         .description("Desired helper panel width. It is capped to avoid covering the open container UI.")
         .defaultValue(260)
-        .range(140, 520)
-        .sliderRange(180, 420)
+        .range(MIN_PANEL_WIDTH, 520)
+        .sliderRange(MIN_PANEL_WIDTH, 420)
         .build()
     );
 
@@ -165,7 +166,7 @@ public class EnchantmentHelperModule extends Module {
 
         graphics.fill(panelX, panelY, panelX + currentPanelWidth, panelY + panelHeight, 0xE0101010);
         graphics.outline(panelX, panelY, currentPanelWidth, panelHeight, 0xB04E7BFF);
-        graphics.text(mc.font, "Enchantments", panelX + PANEL_PADDING, panelY + PANEL_PADDING, 0xFFEDEDED, true);
+        if (currentPanelWidth >= 120) graphics.text(mc.font, "Enchantments", panelX + PANEL_PADDING, panelY + PANEL_PADDING, 0xFFEDEDED, true);
         String count = Integer.toString(currentEntries.size());
         graphics.text(mc.font, count, panelX + currentPanelWidth - PANEL_PADDING - mc.font.width(count), panelY + PANEL_PADDING, 0xFF9FB5FF, true);
 
@@ -235,8 +236,8 @@ public class EnchantmentHelperModule extends Module {
         int leftOfContainer = ((AbstractContainerScreenAccessor) screen).wurstmeteor$getLeftPos();
         int maxLeftWidth = leftOfContainer - panelX - 6;
         int fallbackMaxWidth = graphics.guiWidth() / 2 - panelX - 6;
-        int maxWidth = Math.max(140, maxLeftWidth > 0 ? maxLeftWidth : fallbackMaxWidth);
-        return Math.max(140, Math.min(desiredWidth, maxWidth));
+        int maxWidth = Math.max(MIN_PANEL_WIDTH, maxLeftWidth > 0 ? maxLeftWidth : fallbackMaxWidth);
+        return Math.max(MIN_PANEL_WIDTH, Math.min(desiredWidth, maxWidth));
     }
 
     private List<Entry> scan(AbstractContainerScreen<?> screen) {
@@ -520,6 +521,7 @@ public class EnchantmentHelperModule extends Module {
     }
 
     private String trimToWidth(String text, int width) {
+        if (width <= 0) return "";
         int scaledWidth = Math.round(width / TEXT_SCALE);
         if (mc.font.width(text) <= scaledWidth) return text;
         String suffix = "...";
