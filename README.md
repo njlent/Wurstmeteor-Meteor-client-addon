@@ -25,7 +25,7 @@ A [Meteor Client](https://github.com/MeteorDevelopment/meteor-client) addon that
 
 ## Included Modules
 
-- `anti-blind`,`anti-cheat-detect`,`anti-drop`,`anti-spam`,`anti-void`,`anti-wobble`,`arrow-dmg`,`auto-drop`,`auto-farm`,`auto-librarian`,`auto-mine`,`auto-steal`,`auto-trader`,`barrier-esp`,`beacon-exploit`,`bedrock-stash`,`bonemeal-aura`,`cheat-detector`,`command-scanner`,`creative-flight`,`criticals`,`damage-detect`,`enchantment-helper`,`extra-elytra`,`feed-aura`,`health-tags`,`infinite-reach`,`inv-walk`,`item-esp`,`mace-dmg`,`mob-health`,`multi-aura`,`new-chunks`,`pearl-esp`,`player-sonar`,`quick-shulker`,`spear-assist`,`speed-hack`,`target-place`,`treebot`,`trial-spawner-esp`,`warden-esp`,`wind-charge-key`,`wurst-potion-saver`,`wurst-trajectories`,`x-carry`
+`anti-blind`,`anti-cheat-detect`,`anti-drop`,`anti-spam`,`anti-void`,`anti-wobble`,`arrow-dmg`,`auto-drop`,`auto-farm`,`auto-librarian`,`auto-mine`,`auto-steal`,`auto-trader`,`barrier-esp`,`beacon-exploit`,`bedrock-stash`,`bonemeal-aura`,`cheat-detector`,`command-scanner`,`creative-flight`,`criticals`,`damage-detect`,`enchantment-helper`,`extra-elytra`,`feed-aura`,`health-tags`,`infinite-reach`,`inv-walk`,`item-esp`,`mace-dmg`,`mob-health`,`multi-aura`,`new-chunks`,`pearl-esp`,`player-sonar`,`quick-shulker`,`spear-assist`,`speed-hack`,`target-place`,`treebot`,`trial-spawner-esp`,`warden-esp`,`wind-charge-key`,`wurst-potion-saver`,`wurst-trajectories`,`x-carry`
 
 ## Active Stack
 
