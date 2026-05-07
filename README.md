@@ -68,4 +68,12 @@ If you have suggestions, find bugs or are missing modules you want added - feel 
 >       <a href="https://github.com/njlent/Minehop-Meteor-client-addon">Minehop Addon - Source Engine-style bunnyhopping</a>
 >     </td>
 >   </tr>
+>   <tr>
+>     <td valign="middle">
+>       <img src="https://raw.githubusercontent.com/njlent/Damagenumbers-Meteor-client-addon/refs/heads/master/img/icon.png" width="50" alt="DamageNumbers Addon icon">
+>     </td>
+>     <td valign="middle">
+>       <a href="https://github.com/njlent/Damagenumbers-Meteor-client-addon">DamageNumbers Addon - damage numbers and particles</a>
+>     </td>
+>   </tr>
 > </table>
