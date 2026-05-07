@@ -5,6 +5,7 @@ import de.njlent.wurstmeteor.mixin.AbstractContainerScreenAccessor;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.BoolSetting;
+import meteordevelopment.meteorclient.settings.EnumSetting;
 import meteordevelopment.meteorclient.settings.IntSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
@@ -59,6 +60,13 @@ public class EnchantmentHelperModule extends Module {
         .name("rank-items")
         .description("Ranks enchanted items by legality and max/perfect enchantment sets.")
         .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<TextMode> textMode = sgGeneral.add(new EnumSetting.Builder<TextMode>()
+        .name("text-mode")
+        .description("Controls how much enchantment text is shown in the helper panel.")
+        .defaultValue(TextMode.All)
         .build()
     );
 
@@ -164,18 +172,19 @@ public class EnchantmentHelperModule extends Module {
         int rowY = panelY + PANEL_PADDING + 14;
         for (int i = 0; i < visibleRows; i++) {
             Entry entry = currentEntries.get(i);
-            Tier tier = rankItems.get() ? entry.tier() : Tier.Enchanted;
-            int color = rankItems.get() ? tier.textColor : categoryColor(entry.category());
+            boolean ranked = isRanked(entry);
+            Tier tier = ranked ? entry.tier() : Tier.Enchanted;
+            int color = ranked ? tier.textColor : categoryColor(entry.category());
 
             boolean hovered = mouseX >= panelX && mouseX <= panelX + currentPanelWidth && mouseY >= rowY && mouseY < rowY + ROW_HEIGHT;
-            if (rankItems.get()) graphics.fill(panelX + 1, rowY, panelX + currentPanelWidth - 1, rowY + ROW_HEIGHT, tier.backgroundColor);
+            if (ranked) graphics.fill(panelX + 1, rowY, panelX + currentPanelWidth - 1, rowY + ROW_HEIGHT, tier.backgroundColor);
             if (hovered) graphics.fill(panelX + 1, rowY, panelX + currentPanelWidth - 1, rowY + ROW_HEIGHT, tier.hoverColor);
-            if (rankItems.get()) graphics.fill(panelX + 1, rowY, panelX + 3, rowY + ROW_HEIGHT, tier.barColor);
+            if (ranked) graphics.fill(panelX + 1, rowY, panelX + 3, rowY + ROW_HEIGHT, tier.barColor);
 
             graphics.item(entry.stack(), panelX + PANEL_PADDING, rowY + 4);
-            String rowText = rankItems.get() ? tier.label + " " + entry.enchantments() : entry.enchantments();
+            String rowText = rowText(entry, ranked);
             String text = trimToWidth(rowText, currentPanelWidth - PANEL_PADDING * 3 - 16 - BUTTON_WIDTH - 8);
-            drawSmallText(graphics, text, panelX + PANEL_PADDING + 21, rowY + 5, color);
+            if (!text.isEmpty()) drawSmallText(graphics, text, panelX + PANEL_PADDING + 21, rowY + 5, color);
 
             int buttonX = panelX + currentPanelWidth - PANEL_PADDING - BUTTON_WIDTH;
             int buttonY = rowY + 3;
@@ -248,9 +257,26 @@ public class EnchantmentHelperModule extends Module {
 
     private void sortEntries(List<Entry> entries) {
         Comparator<Entry> comparator = Comparator.comparing(Entry::category).thenComparing(Entry::slot);
-        if (rankItems.get()) comparator = Comparator.comparingInt((Entry entry) -> entry.tier().ordinal()).thenComparing(comparator);
+        if (rankItems.get()) comparator = Comparator.comparingInt((Entry entry) -> sortTier(entry).ordinal()).thenComparing(comparator);
         comparator = Comparator.comparingInt((Entry entry) -> entry.tier() == Tier.Cursed ? 1 : 0).thenComparing(comparator);
         entries.sort(comparator);
+    }
+
+    private boolean isRanked(Entry entry) {
+        return rankItems.get() && !entry.stack().is(Items.ENCHANTED_BOOK);
+    }
+
+    private Tier sortTier(Entry entry) {
+        if (entry.tier() == Tier.Cursed) return Tier.Cursed;
+        return entry.stack().is(Items.ENCHANTED_BOOK) ? Tier.Enchanted : entry.tier();
+    }
+
+    private String rowText(Entry entry, boolean ranked) {
+        return switch (textMode.get()) {
+            case All -> ranked ? entry.tier().label + " " + entry.enchantments() : entry.enchantments();
+            case RankOnly -> ranked ? entry.tier().label : "";
+            case None -> "";
+        };
     }
 
     private void collectStack(List<Entry> entries, ItemStack stack, int slotIndex, int slot, String source) {
@@ -476,7 +502,7 @@ public class EnchantmentHelperModule extends Module {
     private int categoryColor(String category) {
         return switch (category) {
             case "Book" -> 0xFF7FD7FF;
-            case "Cursed" -> 0xFFFF66D8;
+            case "Cursed" -> 0xFFEDEDED;
             case "Weapon" -> 0xFFFF8888;
             case "Shulker" -> 0xFFD9A8FF;
             default -> 0xFFFFD66E;
@@ -548,10 +574,10 @@ public class EnchantmentHelperModule extends Module {
     private enum Tier {
         Illegal("[ILLEGAL]", 0xFFFF4A4A, 0x90FF2020, 0xC0FF3030, 0xFFFF0000),
         Perfect("[PERFECT]", 0xFFFFD76A, 0x604F3A00, 0x806B5200, 0xFFFFD000),
-        Maxed("[MAX]", 0xFF7FFFD0, 0x40208070, 0x6040A080, 0xFF66FFD0),
+        Maxed("[MAX]", 0xFFFF66D8, 0x40200035, 0x70450060, 0xFFFF33CC),
         Strong("[GOOD]", 0xFF9AFF9A, 0x30208030, 0x5040A050, 0xFF60FF80),
         Enchanted("[ENCH]", 0xFFFFD66E, 0x201A1A1A, 0x303A4A70, 0xFFFFD66E),
-        Cursed("[CURSED]", 0xFFFF66D8, 0x40200035, 0x70450060, 0xFFFF33CC),
+        Cursed("[CURSED]", 0xFFEDEDED, 0x00000000, 0x303A4A70, 0xFFEDEDED),
         None("", 0xFFEDEDED, 0x00000000, 0x303A4A70, 0xFFEDEDED);
 
         private final String label;
@@ -567,5 +593,11 @@ public class EnchantmentHelperModule extends Module {
             this.hoverColor = hoverColor;
             this.barColor = barColor;
         }
+    }
+
+    public enum TextMode {
+        All,
+        RankOnly,
+        None
     }
 }
