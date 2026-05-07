@@ -1,6 +1,7 @@
 package de.njlent.wurstmeteor.modules.misc;
 
 import de.njlent.wurstmeteor.WurstMeteorAddon;
+import de.njlent.wurstmeteor.mixin.AbstractContainerScreenAccessor;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.BoolSetting;
@@ -31,7 +32,6 @@ import java.util.Locale;
 import java.util.Set;
 
 public class EnchantmentHelperModule extends Module {
-    private static final int PANEL_WIDTH = 260;
     private static final int PANEL_PADDING = 5;
     private static final int ROW_HEIGHT = 18;
     private static final int BUTTON_WIDTH = 34;
@@ -69,10 +69,20 @@ public class EnchantmentHelperModule extends Module {
         .build()
     );
 
+    private final Setting<Integer> panelWidth = sgGeneral.add(new IntSetting.Builder()
+        .name("panel-width")
+        .description("Desired helper panel width. It is capped to avoid covering the open container UI.")
+        .defaultValue(260)
+        .range(140, 520)
+        .sliderRange(180, 420)
+        .build()
+    );
+
     private AbstractContainerScreen<?> lastScreen;
     private List<Entry> currentEntries = List.of();
     private int panelX;
     private int panelY;
+    private int currentPanelWidth;
     private int visibleRows;
 
     public EnchantmentHelperModule() {
@@ -127,12 +137,13 @@ public class EnchantmentHelperModule extends Module {
         int panelHeight = PANEL_PADDING * 2 + 12 + visibleRows * ROW_HEIGHT;
         panelX = 6;
         panelY = Math.max(4, (graphics.guiHeight() - panelHeight) / 2);
+        currentPanelWidth = safePanelWidth(screen, graphics);
 
-        graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + panelHeight, 0xE0101010);
-        graphics.outline(panelX, panelY, PANEL_WIDTH, panelHeight, 0xB04E7BFF);
+        graphics.fill(panelX, panelY, panelX + currentPanelWidth, panelY + panelHeight, 0xE0101010);
+        graphics.outline(panelX, panelY, currentPanelWidth, panelHeight, 0xB04E7BFF);
         graphics.text(mc.font, "Enchantments", panelX + PANEL_PADDING, panelY + PANEL_PADDING, 0xFFEDEDED, true);
         String count = Integer.toString(currentEntries.size());
-        graphics.text(mc.font, count, panelX + PANEL_WIDTH - PANEL_PADDING - mc.font.width(count), panelY + PANEL_PADDING, 0xFF9FB5FF, true);
+        graphics.text(mc.font, count, panelX + currentPanelWidth - PANEL_PADDING - mc.font.width(count), panelY + PANEL_PADDING, 0xFF9FB5FF, true);
 
         int rowY = panelY + PANEL_PADDING + 14;
         for (int i = 0; i < visibleRows; i++) {
@@ -144,14 +155,14 @@ public class EnchantmentHelperModule extends Module {
                 default -> 0xFFFFD66E;
             };
 
-            boolean hovered = mouseX >= panelX && mouseX <= panelX + PANEL_WIDTH && mouseY >= rowY && mouseY < rowY + ROW_HEIGHT;
-            if (hovered) graphics.fill(panelX + 1, rowY, panelX + PANEL_WIDTH - 1, rowY + ROW_HEIGHT, 0x303A4A70);
+            boolean hovered = mouseX >= panelX && mouseX <= panelX + currentPanelWidth && mouseY >= rowY && mouseY < rowY + ROW_HEIGHT;
+            if (hovered) graphics.fill(panelX + 1, rowY, panelX + currentPanelWidth - 1, rowY + ROW_HEIGHT, 0x303A4A70);
 
             graphics.item(entry.stack(), panelX + PANEL_PADDING, rowY + 4);
-            String text = trimToWidth(entry.enchantments(), PANEL_WIDTH - PANEL_PADDING * 3 - 16 - BUTTON_WIDTH - 8);
+            String text = trimToWidth(entry.enchantments(), currentPanelWidth - PANEL_PADDING * 3 - 16 - BUTTON_WIDTH - 8);
             drawSmallText(graphics, text, panelX + PANEL_PADDING + 21, rowY + 5, color);
 
-            int buttonX = panelX + PANEL_WIDTH - PANEL_PADDING - BUTTON_WIDTH;
+            int buttonX = panelX + currentPanelWidth - PANEL_PADDING - BUTTON_WIDTH;
             int buttonY = rowY + 3;
             int buttonColor = entry.slotIndex() >= 0 ? 0xB0253348 : 0x70252525;
             graphics.fill(buttonX, buttonY, buttonX + BUTTON_WIDTH, buttonY + 12, buttonColor);
@@ -174,7 +185,7 @@ public class EnchantmentHelperModule extends Module {
         int rowY = panelY + PANEL_PADDING + 14;
         for (int i = 0; i < visibleRows && i < currentEntries.size(); i++) {
             Entry entry = currentEntries.get(i);
-            int buttonX = panelX + PANEL_WIDTH - PANEL_PADDING - BUTTON_WIDTH;
+            int buttonX = panelX + currentPanelWidth - PANEL_PADDING - BUTTON_WIDTH;
             int buttonY = rowY + 3;
             if (mouseX >= buttonX && mouseX <= buttonX + BUTTON_WIDTH && mouseY >= buttonY && mouseY <= buttonY + 12) {
                 if (entry.slotIndex() >= 0) {
@@ -188,7 +199,16 @@ public class EnchantmentHelperModule extends Module {
             rowY += ROW_HEIGHT;
         }
 
-        return mouseX >= panelX && mouseX <= panelX + PANEL_WIDTH && mouseY >= panelY && mouseY <= panelY + PANEL_PADDING * 2 + 12 + visibleRows * ROW_HEIGHT;
+        return mouseX >= panelX && mouseX <= panelX + currentPanelWidth && mouseY >= panelY && mouseY <= panelY + PANEL_PADDING * 2 + 12 + visibleRows * ROW_HEIGHT;
+    }
+
+    private int safePanelWidth(AbstractContainerScreen<?> screen, GuiGraphicsExtractor graphics) {
+        int desiredWidth = panelWidth.get();
+        int leftOfContainer = ((AbstractContainerScreenAccessor) screen).wurstmeteor$getLeftPos();
+        int maxLeftWidth = leftOfContainer - panelX - 6;
+        int fallbackMaxWidth = graphics.guiWidth() / 2 - panelX - 6;
+        int maxWidth = Math.max(140, maxLeftWidth > 0 ? maxLeftWidth : fallbackMaxWidth);
+        return Math.max(140, Math.min(desiredWidth, maxWidth));
     }
 
     private List<Entry> scan(AbstractContainerScreen<?> screen) {

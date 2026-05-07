@@ -3,6 +3,7 @@
   "package": "de.njlent.wurstmeteor.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
+    "AbstractContainerScreenAccessor",
     "AbstractContainerScreenMixin",
     "ClientWorldMixin",
     "CreativeInventoryScreenAccessor",
