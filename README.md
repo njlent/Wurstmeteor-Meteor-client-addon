@@ -8,8 +8,8 @@
  <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases"><img src="https://img.shields.io/badge/minecraft-26.1.2-green"/></a>
  <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22"><img src="https://img.shields.io/badge/minecraft-1.21.11-darkgreen"/></a>
  <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.21"><img src="https://img.shields.io/badge/minecraft-1.21.10-darkgreen"/></a> 
- <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22"><img src="https://img.shields.io/badge/minecraft-1.21.5-darkgreen"/> </a>
- <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22"><img src="https://img.shields.io/badge/minecraft-1.21.4-darkgreen"/> </a>
+ <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22"><img src="https://img.shields.io/badge/minecraft-1.21.5-darkgreen"/></a>
+ <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22"><img src="https://img.shields.io/badge/minecraft-1.21.4-darkgreen"/></a>
 
 </div>
 <br/>
