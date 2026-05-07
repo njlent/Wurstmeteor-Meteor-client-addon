@@ -6,6 +6,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.DoubleSetting;
+import meteordevelopment.meteorclient.settings.IntSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
@@ -30,6 +31,9 @@ public class MobHealthModule extends Module {
     private static final Identifier HEART_CONTAINER = Identifier.withDefaultNamespace("hud/heart/container");
     private static final Identifier HEART_FULL = Identifier.withDefaultNamespace("hud/heart/full");
     private static final Identifier HEART_HALF = Identifier.withDefaultNamespace("hud/heart/half");
+    private static final int HEART_SPACING = 8;
+    private static final int HEART_SIZE = 9;
+    private static final int HEART_ROW_SPACING = 10;
 
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
@@ -72,6 +76,16 @@ public class MobHealthModule extends Module {
         .name("show-hearts")
         .description("Shows health as hearts instead of a number.")
         .defaultValue(true)
+        .build()
+    );
+
+    private final Setting<Integer> heartsPerRow = sgGeneral.add(new IntSetting.Builder()
+        .name("hearts-per-row")
+        .description("Maximum hearts per overlay row before extra rows are stacked above.")
+        .defaultValue(10)
+        .range(1, 40)
+        .sliderRange(5, 20)
+        .visible(showHearts::get)
         .build()
     );
 
@@ -155,24 +169,33 @@ public class MobHealthModule extends Module {
     private void drawHeartRow(GuiGraphicsExtractor graphics, float centerX, float y, float heartScale, Mob mob) {
         float currentHealth = Math.max(0.0F, mob.getHealth());
         float maxHealth = Math.max(1.0F, mob.getMaxHealth());
-        int slots = Math.min(10, Math.max(1, Mth.ceil(maxHealth / 2.0F)));
+        int slots = Math.max(1, Mth.ceil(maxHealth / 2.0F));
         int filledHalfHearts = Mth.clamp(Math.round(currentHealth), 0, slots * 2);
-        float width = ((slots - 1) * 8 + 9) * heartScale;
-        float x = centerX - width / 2.0F;
+        int perRow = Math.max(1, heartsPerRow.get());
+        int rows = Mth.ceil(slots / (float) perRow);
 
         graphics.pose().pushMatrix();
-        graphics.pose().translate(x, y);
+        graphics.pose().translate(centerX, y);
         graphics.pose().scale(heartScale, heartScale);
 
-        for (int i = 0; i < slots; i++) {
-            int heartX = i * 8;
-            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HEART_CONTAINER, heartX, 0, 9, 9);
+        for (int row = 0; row < rows; row++) {
+            int rowStart = row * perRow;
+            int rowSlots = Math.min(perRow, slots - rowStart);
+            float rowWidth = (rowSlots - 1) * HEART_SPACING + HEART_SIZE;
+            float rowX = -rowWidth / 2.0F;
+            int rowY = -row * HEART_ROW_SPACING;
 
-            int halfIndex = i * 2;
-            if (filledHalfHearts >= halfIndex + 2) {
-                graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HEART_FULL, heartX, 0, 9, 9);
-            } else if (filledHalfHearts == halfIndex + 1) {
-                graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HEART_HALF, heartX, 0, 9, 9);
+            for (int i = 0; i < rowSlots; i++) {
+                int slot = rowStart + i;
+                int heartX = Math.round(rowX + i * HEART_SPACING);
+                graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HEART_CONTAINER, heartX, rowY, HEART_SIZE, HEART_SIZE);
+
+                int halfIndex = slot * 2;
+                if (filledHalfHearts >= halfIndex + 2) {
+                    graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HEART_FULL, heartX, rowY, HEART_SIZE, HEART_SIZE);
+                } else if (filledHalfHearts == halfIndex + 1) {
+                    graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HEART_HALF, heartX, rowY, HEART_SIZE, HEART_SIZE);
+                }
             }
         }
 
