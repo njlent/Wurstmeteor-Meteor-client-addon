@@ -5,19 +5,19 @@
 
  <img src="https://img.shields.io/badge/Meteor Client Addon-6f1ab1?logo=meteor&logoColor=white"/> 
  <br>
-  <img src="https://img.shields.io/badge/minecraft-26.1.2-green"/>
- <img src="https://img.shields.io/badge/minecraft-1.21.11-darkgreen"/>
- <img src="https://img.shields.io/badge/minecraft-1.21.10-darkgreen"/> 
- <img src="https://img.shields.io/badge/minecraft-1.21.5-darkgreen"/> 
- <img src="https://img.shields.io/badge/minecraft-1.21.4-darkgreen"/> 
+ <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases"><img src="https://img.shields.io/badge/minecraft-26.1.2-green"/></a>
+ <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22"><img src="https://img.shields.io/badge/minecraft-1.21.11-darkgreen"/></a>
+ <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.21"><img src="https://img.shields.io/badge/minecraft-1.21.10-darkgreen"/></a> 
+ <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22"><img src="https://img.shields.io/badge/minecraft-1.21.5-darkgreen"/> </a>
+ <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22"><img src="https://img.shields.io/badge/minecraft-1.21.4-darkgreen"/> </a>
 
 </div>
 <br/>
 
 A [Meteor Client](https://github.com/MeteorDevelopment/meteor-client) addon that ports selected [Wurst Client](https://github.com/Wurst-Imperium/Wurst7) and [Wurst CevAPI](https://github.com/cev-api/Wurst7-CevAPI) features to Meteor.
 
-## Supported versions (check branches for legacy versions): 
-- **Minecraft 26.1.2 ([latest](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases))**
+## Download Supported versions (check branches for legacy code): 
+- **Minecraft 26.1.2 ([latest](c))**
 - **Minecraft 1.21.11 ([up to v0.1.22](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22))**
 - **Minecraft 1.21.10 ([up to v0.1.21](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.21))**
 - **Minecraft 1.21.5 ([legacy v0.1.22](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22))**
