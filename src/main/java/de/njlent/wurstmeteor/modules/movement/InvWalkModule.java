@@ -65,7 +65,7 @@ public class InvWalkModule extends Module {
     private void onTick(TickEvent.Pre event) {
         if (mc.player == null) return;
 
-        Screen screen = mc.screen;
+        Screen screen = mc.gui.screen();
         if (screen == null) return;
         if (!isAllowedScreen(screen)) return;
 

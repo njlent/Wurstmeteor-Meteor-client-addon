@@ -84,7 +84,7 @@ public class TargetPlaceModule extends Module {
     private void onTick(TickEvent.Pre event) {
         if (mc.player == null || mc.level == null || mc.gameMode == null) return;
 
-        if (mc.screen != null) {
+        if (mc.gui.screen() != null) {
             activationWasPressed = false;
             return;
         }

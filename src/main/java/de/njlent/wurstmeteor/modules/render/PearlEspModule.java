@@ -11,7 +11,7 @@ import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ClipContext;
@@ -78,7 +78,7 @@ public class PearlEspModule extends Module {
 
         Set<UUID> seen = new HashSet<>();
         for (Entity entity : mc.level.entitiesForRendering()) {
-            if (entity.getType() != EntityType.ENDER_PEARL) continue;
+            if (entity.getType() != EntityTypes.ENDER_PEARL) continue;
             seen.add(entity.getUUID());
             if (alertedPearls.add(entity.getUUID())) {
                 info("Ender pearl detected at %s, %s, %s.", (int) entity.getX(), (int) entity.getY(), (int) entity.getZ());
@@ -95,7 +95,7 @@ public class PearlEspModule extends Module {
         Color line = new Color(color.get()).a(220);
 
         for (Entity entity : mc.level.entitiesForRendering()) {
-            if (entity.getType() == EntityType.ENDER_PEARL) {
+            if (entity.getType() == EntityTypes.ENDER_PEARL) {
                 AABB box = entity.getBoundingBox().inflate(0.15);
                 event.renderer.box(box, side, line, ShapeMode.Both, 0);
                 if (tracers.get() && RenderUtils.center != null) event.renderer.line(RenderUtils.center.x, RenderUtils.center.y, RenderUtils.center.z, box.getCenter().x, box.getCenter().y, box.getCenter().z, line);

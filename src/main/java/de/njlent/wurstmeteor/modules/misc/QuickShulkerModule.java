@@ -121,7 +121,7 @@ public class QuickShulkerModule extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (mc.player == null || mc.gameMode == null || !(mc.screen instanceof ShulkerBoxScreen screen) || !(screen.getMenu() instanceof ShulkerBoxMenu menu)) {
+        if (mc.player == null || mc.gameMode == null || !(mc.gui.screen() instanceof ShulkerBoxScreen screen) || !(screen.getMenu() instanceof ShulkerBoxMenu menu)) {
             resetScreenState();
             return;
         }

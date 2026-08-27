@@ -65,7 +65,7 @@ public class AutoTraderModule extends Module {
     @EventHandler
     private void onTick(TickEvent.Pre event) {
         if (mc.player == null || mc.gameMode == null || mc.getConnection() == null) return;
-        if (!(mc.screen instanceof MerchantScreen merchantScreen)) return;
+        if (!(mc.gui.screen() instanceof MerchantScreen merchantScreen)) return;
 
         if (cooldown > 0) {
             cooldown--;

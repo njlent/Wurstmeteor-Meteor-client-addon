@@ -2,10 +2,13 @@ plugins {
     alias(libs.plugins.fabric.loom)
 }
 
+val archivesBaseName = providers.gradleProperty("archives_base_name").get()
+val mavenGroup = providers.gradleProperty("maven_group").get()
+
 base {
-    archivesName = properties["archives_base_name"] as String
+    archivesName = archivesBaseName
     version = libs.versions.mod.version.get()
-    group = properties["maven_group"] as String
+    group = mavenGroup
 }
 
 repositories {
@@ -37,7 +40,7 @@ tasks {
     processResources {
         val propertyMap = mapOf(
             "version" to project.version,
-            "mc_version" to "~26.1"
+            "mc_version" to "~26.2"
         )
 
         inputs.properties(propertyMap)
@@ -50,7 +53,7 @@ tasks {
     }
 
     jar {
-        inputs.property("archivesName", project.base.archivesName.get())
+        inputs.property("archivesName", archivesBaseName)
 
         from("LICENSE") {
             rename { "${it}_${inputs.properties["archivesName"]}" }

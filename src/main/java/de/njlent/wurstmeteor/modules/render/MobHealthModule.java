@@ -161,7 +161,7 @@ public class MobHealthModule extends Module {
 
         float x = (float) ((projected.x + 1.0) * 0.5 * graphics.guiWidth());
         float y = (float) ((1.0 - (projected.y + 1.0) * 0.5) * graphics.guiHeight());
-        double distance = mc.gameRenderer.getMainCamera().position().distanceTo(worldPos);
+        double distance = mc.gameRenderer.mainCamera().position().distanceTo(worldPos);
         float heartScale = Mth.clamp(scale.get().floatValue() * (distance > 12.0 ? (float) (12.0 / distance) : 1.0F), 0.25F, 1.6F);
         drawHeartRow(graphics, x, y, heartScale, mob);
     }

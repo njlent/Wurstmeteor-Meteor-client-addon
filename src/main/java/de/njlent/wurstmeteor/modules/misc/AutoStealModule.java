@@ -80,7 +80,7 @@ public class AutoStealModule extends Module {
     @EventHandler
     private void onTick(TickEvent.Pre event) {
         if (mc.player == null || mc.gameMode == null) return;
-        if (!(mc.screen instanceof AbstractContainerScreen<?> screen) || screen instanceof CreativeModeInventoryScreen) {
+        if (!(mc.gui.screen() instanceof AbstractContainerScreen<?> screen) || screen instanceof CreativeModeInventoryScreen) {
             lastScreen = null;
             cooldown = 0;
             return;

@@ -5,7 +5,7 @@
 
  <img src="https://img.shields.io/badge/Meteor Client Addon-6f1ab1?logo=meteor&logoColor=white"/> 
  <br>
- <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases"><img src="https://img.shields.io/badge/minecraft-26.1.2-green"/></a>
+ <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases"><img src="https://img.shields.io/badge/minecraft-26.2-green"/></a>
  <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22"><img src="https://img.shields.io/badge/minecraft-1.21.11-darkgreen"/></a>
  <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.21"><img src="https://img.shields.io/badge/minecraft-1.21.10-darkgreen"/></a> 
  <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22"><img src="https://img.shields.io/badge/minecraft-1.21.5-darkgreen"/></a>
@@ -17,7 +17,7 @@
 A [Meteor Client](https://github.com/MeteorDevelopment/meteor-client) addon that ports selected [Wurst Client](https://github.com/Wurst-Imperium/Wurst7) and [Wurst CevAPI](https://github.com/cev-api/Wurst7-CevAPI) features to Meteor.
 
 ## Download Supported versions (check branches for legacy code): 
-- **Minecraft 26.1.2 ([latest](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases))**
+- **Minecraft 26.2 ([latest](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases))**
 - **Minecraft 1.21.11 ([up to v0.1.22](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22))**
 - **Minecraft 1.21.10 ([up to v0.1.21](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.21))**
 - **Minecraft 1.21.5 ([legacy v0.1.22](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22))**
@@ -29,12 +29,12 @@ A [Meteor Client](https://github.com/MeteorDevelopment/meteor-client) addon that
 
 ## Active Stack
 
-- Minecraft: `26.1.2`
-- Fabric Loader: `0.19.2`
-- Fabric API: `0.146.1+26.1.2`
-- Meteor Client: `26.1.2-SNAPSHOT`
-- Loom: `1.16-SNAPSHOT`
-- Gradle: `9.4.1`
+- Minecraft: `26.2`
+- Fabric Loader: `0.19.3`
+- Fabric API: `0.154.2+26.2`
+- Meteor Client: `26.2-SNAPSHOT`
+- Loom: `1.17-SNAPSHOT`
+- Gradle: `9.6.1`
 - Java: `25`
 
 ## Dev Notes

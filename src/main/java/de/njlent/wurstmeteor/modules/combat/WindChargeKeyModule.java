@@ -104,7 +104,7 @@ public class WindChargeKeyModule extends Module {
             return;
         }
 
-        if (mc.screen != null) return;
+        if (mc.gui.screen() != null) return;
 
         boolean pressed = activationKey.get().isSet() && activationKey.get().isPressed();
         if (pressed && !keyWasPressed) scheduleThrow();

@@ -17,6 +17,7 @@ import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundSectionBlocksUpdatePacket;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.Iterator;
 import java.util.Locale;
@@ -139,7 +140,7 @@ public class PlayerSonarModule extends Module {
 
     private void record(BlockPos pos, BlockState state) {
         if (pos == null || state == null) return;
-        if (onlyBeyondPlayerEsp.get() && mc.player.distanceToSqr(pos.getCenter()) <= PLAYER_ESP_LIMIT_SQ) return;
+        if (onlyBeyondPlayerEsp.get() && mc.player.distanceToSqr(Vec3.atCenterOf(pos)) <= PLAYER_ESP_LIMIT_SQ) return;
 
         BlockState oldState = resolveOldState(pos, state);
         SonarKind kind = classify(oldState, state);

@@ -49,7 +49,7 @@ public class AutoDropModule extends Module {
     @EventHandler
     private void onTick(TickEvent.Pre event) {
         if (mc.player == null || mc.gameMode == null) return;
-        if (mc.screen instanceof AbstractContainerScreen<?> && !(mc.screen instanceof InventoryScreen)) return;
+        if (mc.gui.screen() instanceof AbstractContainerScreen<?> && !(mc.gui.screen() instanceof InventoryScreen)) return;
 
         int dropped = 0;
         for (int invSlot = 0; invSlot < 36 && dropped < dropsPerTick.get(); invSlot++) {

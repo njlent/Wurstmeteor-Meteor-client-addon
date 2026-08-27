@@ -11,6 +11,7 @@ import meteordevelopment.orbit.EventHandler;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionHand;
@@ -108,7 +109,7 @@ public class MultiAuraModule extends Module {
     private final Setting<Set<EntityType<?>>> entities = sgTargeting.add(new EntityTypeListSetting.Builder()
         .name("entities")
         .description("Entity types to attack.")
-        .defaultValue(EntityType.PLAYER)
+        .defaultValue(EntityTypes.PLAYER)
         .onlyAttackable()
         .build()
     );
@@ -127,7 +128,7 @@ public class MultiAuraModule extends Module {
     @EventHandler
     private void onTick(TickEvent.Pre event) {
         if (mc.player == null || mc.level == null || mc.gameMode == null) return;
-        if (pauseInContainers.get() && mc.screen instanceof AbstractContainerScreen<?>) return;
+        if (pauseInContainers.get() && mc.gui.screen() instanceof AbstractContainerScreen<?>) return;
         if (pauseOnUse.get() && (mc.player.isUsingItem() || mc.gameMode.isDestroying())) return;
 
         long now = System.currentTimeMillis();

@@ -191,7 +191,7 @@ public class AutoLibrarianModule extends Module {
 
         if (handleProfessionTimeout()) return;
 
-        if (!(mc.screen instanceof MerchantScreen merchantScreen)) {
+        if (!(mc.gui.screen() instanceof MerchantScreen merchantScreen)) {
             openTradeScreen();
             return;
         }
@@ -306,13 +306,13 @@ public class AutoLibrarianModule extends Module {
     private void breakJobSite() {
         if (jobSite == null) return;
 
-        if (mc.screen instanceof MerchantScreen) {
+        if (mc.gui.screen() instanceof MerchantScreen) {
             closeTradeScreen(false);
-            if (mc.screen instanceof MerchantScreen) return;
+            if (mc.gui.screen() instanceof MerchantScreen) return;
         }
 
         double rangeSq = range.get() * range.get();
-        if (mc.player.distanceToSqr(jobSite.getCenter()) > rangeSq) {
+        if (mc.player.distanceToSqr(Vec3.atCenterOf(jobSite)) > rangeSq) {
             BlockPos corrected = resolveJobSite();
             if (corrected != null) {
                 jobSite = corrected;
@@ -343,7 +343,7 @@ public class AutoLibrarianModule extends Module {
             return;
         }
 
-        if (rotate.get()) RotationPackets.face(jobSite.getCenter());
+        if (rotate.get()) RotationPackets.face(Vec3.atCenterOf(jobSite));
 
         if (meteordevelopment.meteorclient.utils.world.BlockUtils.breakBlock(jobSite, swing.get())) {
             actionDelay = 1;
@@ -522,9 +522,9 @@ public class AutoLibrarianModule extends Module {
         for (Direction direction : Direction.values()) {
             BlockPos candidate = villagerPos.relative(direction);
             if (!mc.level.getBlockState(candidate).is(Blocks.LECTERN)) continue;
-            if (mc.player.distanceToSqr(candidate.getCenter()) > rangeSq) continue;
+            if (mc.player.distanceToSqr(Vec3.atCenterOf(candidate)) > rangeSq) continue;
 
-            double distance = villager.distanceToSqr(candidate.getCenter());
+            double distance = villager.distanceToSqr(Vec3.atCenterOf(candidate));
             if (distance >= bestDistance) continue;
 
             best = candidate.immutable();
@@ -533,7 +533,7 @@ public class AutoLibrarianModule extends Module {
 
         // Rare edge case: villager inside lectern block in very tight setups.
         if (best == null && mc.level.getBlockState(villagerPos).is(Blocks.LECTERN)
-            && mc.player.distanceToSqr(villagerPos.getCenter()) <= rangeSq) {
+            && mc.player.distanceToSqr(Vec3.atCenterOf(villagerPos)) <= rangeSq) {
             return villagerPos.immutable();
         }
 
@@ -550,7 +550,7 @@ public class AutoLibrarianModule extends Module {
             if (neighborState.getShape(mc.level, neighbor).isEmpty() || neighborState.canBeReplaced()) continue;
 
             Direction side = direction.getOpposite();
-            Vec3 hitPos = neighbor.getCenter().add(side.getStepX() * 0.5, side.getStepY() * 0.5, side.getStepZ() * 0.5);
+            Vec3 hitPos = Vec3.atCenterOf(neighbor).add(side.getStepX() * 0.5, side.getStepY() * 0.5, side.getStepZ() * 0.5);
             boolean lineOfSight = hasLineOfSight(eyes, hitPos);
             double distanceSq = eyes.distanceToSqr(hitPos);
 

@@ -134,7 +134,7 @@ public class EnchantmentHelperModule extends Module {
             return;
         }
 
-        if (!(mc.screen instanceof AbstractContainerScreen<?> screen)) {
+        if (!(mc.gui.screen() instanceof AbstractContainerScreen<?> screen)) {
             lastScreen = null;
             currentEntries = List.of();
             return;

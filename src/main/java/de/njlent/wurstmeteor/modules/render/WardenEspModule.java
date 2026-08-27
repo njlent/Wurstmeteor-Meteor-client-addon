@@ -16,7 +16,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.monster.warden.AngerLevel;
 import net.minecraft.world.entity.monster.warden.Warden;
 import org.joml.Vector3d;
@@ -105,7 +105,7 @@ public class WardenEspModule extends Module {
         Color line = new Color(color.get()).a(220);
 
         for (Entity entity : mc.level.entitiesForRendering()) {
-            if (entity.getType() != EntityType.WARDEN) continue;
+            if (entity.getType() != EntityTypes.WARDEN) continue;
             count++;
 
             event.renderer.box(entity.getBoundingBox(), side, line, shapeMode.get(), 0);
@@ -131,7 +131,7 @@ public class WardenEspModule extends Module {
 
             NametagUtils.begin(pos, event.graphics);
             TextRenderer renderer = TextRenderer.get();
-            renderer.begin(1.0, false, true);
+            renderer.begin(event.graphics, 1.0, false, true);
 
             double width = 0.0;
             for (Line line : lines) width = Math.max(width, renderer.getWidth(line.text()));
