@@ -1,6 +1,8 @@
 package de.njlent.wurstmeteor.modules.world.treebot.pathing;
 
+import de.njlent.wurstmeteor.mixin.BlockStateBaseAccessor;
 import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
@@ -191,7 +193,7 @@ public class TreeBotPathFinder {
         var state = mc.level.getBlockState(pos);
         Block block = state.getBlock();
 
-        return (state.blocksMotion() && !(block instanceof SignBlock))
+        return (hasSolidState(state) && !(block instanceof SignBlock))
             || block instanceof LadderBlock
             || (abilities.jesus() && (block == Blocks.WATER || block == Blocks.LAVA));
     }
@@ -202,11 +204,18 @@ public class TreeBotPathFinder {
         var state = mc.level.getBlockState(pos);
         Block block = state.getBlock();
 
-        if (state.blocksMotion() && !(block instanceof SignBlock)) return false;
+        if (hasSolidState(state) && !(block instanceof SignBlock)) return false;
         if (block instanceof TripWireBlock || block instanceof BasePressurePlateBlock) return false;
 
         if (!abilities.invulnerable() && (block == Blocks.LAVA || block instanceof BaseFireBlock)) return false;
         return true;
+    }
+
+    private boolean hasSolidState(BlockState state) {
+        Block block = state.getBlock();
+        return block != Blocks.COBWEB
+            && block != Blocks.BAMBOO_SAPLING
+            && ((BlockStateBaseAccessor) (Object) state).wurstmeteor$isLegacySolid();
     }
 
     private boolean canGoAbove(BlockPos pos) {
