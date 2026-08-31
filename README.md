@@ -5,7 +5,9 @@
 
  <img src="https://img.shields.io/badge/Meteor Client Addon-6f1ab1?logo=meteor&logoColor=white"/> 
  <br>
- <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases"><img src="https://img.shields.io/badge/minecraft-26.2-green"/></a>
+ <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.2.04"><img src="https://img.shields.io/badge/minecraft-26.2-green"/></a>
+ <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases"><img src="https://img.shields.io/badge/minecraft-26.1-darkgreen"/></a>
+ <br>
  <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22"><img src="https://img.shields.io/badge/minecraft-1.21.11-darkgreen"/></a>
  <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.21"><img src="https://img.shields.io/badge/minecraft-1.21.10-darkgreen"/></a> 
  <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22"><img src="https://img.shields.io/badge/minecraft-1.21.5-darkgreen"/></a>
@@ -18,6 +20,7 @@ A [Meteor Client](https://github.com/MeteorDevelopment/meteor-client) addon that
 
 ## Download Supported versions (check branches for legacy code): 
 - **Minecraft 26.2 ([latest](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases))**
+- **Minecraft 26.1 ([up to v0.2.04](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.2.04))**
 - **Minecraft 1.21.11 ([up to v0.1.22](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22))**
 - **Minecraft 1.21.10 ([up to v0.1.21](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.21))**
 - **Minecraft 1.21.5 ([legacy v0.1.22](https://github.com/njlent/Wurstmeteor-Meteor-client-addon/releases/tag/v0.1.22))**
