@@ -24,7 +24,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.VaultBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.BlockEntityTypes;
 import net.minecraft.world.level.block.entity.TrialSpawnerBlockEntity;
 import net.minecraft.world.level.block.entity.trialspawner.TrialSpawner;
 import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerConfig;
@@ -201,7 +201,7 @@ public class TrialSpawnerEspModule extends Module {
         });
 
         for (BlockEntity blockEntity : BlockEntityUtils.getLoadedBlockEntities(mc.level, mc.player.blockPosition(), chunkRadius.get())) {
-            if (blockEntity.getType() != BlockEntityType.VAULT) continue;
+            if (blockEntity.getType() != BlockEntityTypes.VAULT) continue;
             BlockState state = mc.level.getBlockState(blockEntity.getBlockPos());
             if (state.hasProperty(VaultBlock.STATE) && state.getValue(VaultBlock.STATE) == VaultState.EJECTING) openedVaults.add(vaultKey(blockEntity.getBlockPos()));
         }
@@ -224,8 +224,8 @@ public class TrialSpawnerEspModule extends Module {
 
         count = 0;
         for (BlockEntity blockEntity : BlockEntityUtils.getLoadedBlockEntities(mc.level, mc.player.blockPosition(), chunkRadius.get())) {
-            boolean spawner = showSpawners.get() && blockEntity.getType() == BlockEntityType.TRIAL_SPAWNER;
-            boolean vault = showVaults.get() && blockEntity.getType() == BlockEntityType.VAULT;
+            boolean spawner = showSpawners.get() && blockEntity.getType() == BlockEntityTypes.TRIAL_SPAWNER;
+            boolean vault = showVaults.get() && blockEntity.getType() == BlockEntityTypes.VAULT;
             if (!spawner && !vault) continue;
 
             count++;
@@ -256,8 +256,8 @@ public class TrialSpawnerEspModule extends Module {
         if (!textOverlay.get() || mc.player == null || mc.level == null) return;
 
         for (BlockEntity blockEntity : BlockEntityUtils.getLoadedBlockEntities(mc.level, mc.player.blockPosition(), chunkRadius.get())) {
-            boolean spawner = showSpawners.get() && blockEntity.getType() == BlockEntityType.TRIAL_SPAWNER;
-            boolean vault = showVaults.get() && blockEntity.getType() == BlockEntityType.VAULT;
+            boolean spawner = showSpawners.get() && blockEntity.getType() == BlockEntityTypes.TRIAL_SPAWNER;
+            boolean vault = showVaults.get() && blockEntity.getType() == BlockEntityTypes.VAULT;
             if (!spawner && !vault) continue;
 
             List<Line> lines = spawner ? spawnerLines(blockEntity) : vaultLines(blockEntity);
@@ -268,7 +268,7 @@ public class TrialSpawnerEspModule extends Module {
 
             NametagUtils.begin(pos, event.graphics);
             TextRenderer renderer = TextRenderer.get();
-            renderer.begin(1.0, false, true);
+            renderer.begin(event.graphics, 1.0, false, true);
 
             double width = 0.0;
             for (Line line : lines) width = Math.max(width, renderer.getWidth(line.text()));
@@ -320,7 +320,7 @@ public class TrialSpawnerEspModule extends Module {
         }
 
         if (showActivationRange.get() && !showTriggerBox.get()) lines.add(new Line("Range: " + logic.getRequiredPlayerRange() + "m", Color.WHITE));
-        if (showDistance.get()) lines.add(new Line("Distance: " + Math.round(Math.sqrt(mc.player.distanceToSqr(blockEntity.getBlockPos().getCenter()))) + "m", Color.WHITE));
+        if (showDistance.get()) lines.add(new Line("Distance: " + Math.round(Math.sqrt(mc.player.distanceToSqr(Vec3.atCenterOf(blockEntity.getBlockPos())))) + "m", Color.WHITE));
         return lines;
     }
 
@@ -341,7 +341,7 @@ public class TrialSpawnerEspModule extends Module {
             if (!claimState.isBlank()) lines.add(new Line(claimState, claimColor(claimState)));
         }
 
-        if (showDistance.get()) lines.add(new Line("Distance: " + Math.round(Math.sqrt(mc.player.distanceToSqr(blockEntity.getBlockPos().getCenter()))) + "m", Color.WHITE));
+        if (showDistance.get()) lines.add(new Line("Distance: " + Math.round(Math.sqrt(mc.player.distanceToSqr(Vec3.atCenterOf(blockEntity.getBlockPos())))) + "m", Color.WHITE));
         return lines;
     }
 
@@ -368,8 +368,8 @@ public class TrialSpawnerEspModule extends Module {
     private boolean canSeeBlock(BlockEntity blockEntity) {
         if (mc.player == null || mc.level == null) return true;
 
-        Vec3 from = mc.gameRenderer.getMainCamera().position();
-        Vec3 to = blockEntity.getBlockPos().getCenter();
+        Vec3 from = mc.gameRenderer.mainCamera().position();
+        Vec3 to = Vec3.atCenterOf(blockEntity.getBlockPos());
         BlockHitResult hit = mc.level.clip(new ClipContext(from, to, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, mc.player));
         return hit.getType() == HitResult.Type.MISS || hit.getBlockPos().equals(blockEntity.getBlockPos());
     }

@@ -22,7 +22,7 @@ public class AntiSpamModule extends Module {
     private void onReceiveMessage(ReceiveMessageEvent event) {
         if (mc.gui == null || mc.font == null) return;
 
-        ChatComponent chatHud = mc.gui.getChat();
+        ChatComponent chatHud = mc.gui.hud.getChat();
         List<GuiMessage.Line> chatLines = ((ChatComponentAccessor) chatHud).meteor$getTrimmedMessages();
         if (chatLines.isEmpty()) return;
 

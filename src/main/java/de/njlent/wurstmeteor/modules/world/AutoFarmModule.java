@@ -202,7 +202,7 @@ public class AutoFarmModule extends Module {
             center.offset(-blockRange, -blockRange, -blockRange),
             center.offset(blockRange, blockRange, blockRange)
         )) {
-            Vec3 posCenter = pos.getCenter();
+            Vec3 posCenter = Vec3.atCenterOf(pos);
             if (mc.player.getEyePosition().distanceToSqr(posCenter) > rangeSq) continue;
 
             BlockState state = mc.level.getBlockState(pos);
@@ -244,7 +244,7 @@ public class AutoFarmModule extends Module {
                 continue;
             }
 
-            double distanceSq = mc.player.getEyePosition().distanceToSqr(pos.getCenter());
+            double distanceSq = mc.player.getEyePosition().distanceToSqr(Vec3.atCenterOf(pos));
             if (distanceSq > rangeSq) continue;
 
             replantList.add(new ReplantTarget(pos.immutable(), seed));
@@ -265,7 +265,7 @@ public class AutoFarmModule extends Module {
     private boolean tryMine(List<BlockPos> mineList) {
         if (mineList.isEmpty()) return false;
 
-        mineList.sort(Comparator.comparingDouble(pos -> mc.player.getEyePosition().distanceToSqr(pos.getCenter())));
+        mineList.sort(Comparator.comparingDouble(pos -> mc.player.getEyePosition().distanceToSqr(Vec3.atCenterOf(pos))));
 
         for (BlockPos pos : mineList) {
             if (checkLos.get() && !hasLineOfSight(pos)) continue;
@@ -278,12 +278,12 @@ public class AutoFarmModule extends Module {
     private boolean tryInteract(List<BlockPos> interactList) {
         if (interactList.isEmpty()) return false;
 
-        interactList.sort(Comparator.comparingDouble(pos -> mc.player.getEyePosition().distanceToSqr(pos.getCenter())));
+        interactList.sort(Comparator.comparingDouble(pos -> mc.player.getEyePosition().distanceToSqr(Vec3.atCenterOf(pos))));
 
         for (BlockPos pos : interactList) {
             if (checkLos.get() && !hasLineOfSight(pos)) continue;
 
-            Vec3 hitPos = pos.getCenter();
+            Vec3 hitPos = Vec3.atCenterOf(pos);
             if (rotate.get()) RotationPackets.face(hitPos);
 
             BlockHitResult hitResult = new BlockHitResult(hitPos, Direction.UP, pos, false);
@@ -302,7 +302,7 @@ public class AutoFarmModule extends Module {
     private boolean tryReplant(List<ReplantTarget> replantList) {
         if (replantList.isEmpty()) return false;
 
-        replantList.sort(Comparator.comparingDouble(target -> mc.player.getEyePosition().distanceToSqr(target.pos().getCenter())));
+        replantList.sort(Comparator.comparingDouble(target -> mc.player.getEyePosition().distanceToSqr(Vec3.atCenterOf(target.pos()))));
 
         for (ReplantTarget target : replantList) {
             BlockPos pos = target.pos();
@@ -345,7 +345,7 @@ public class AutoFarmModule extends Module {
                 BlockPos logPos = pos.relative(direction);
                 if (mc.level.getBlockState(logPos).is(BlockTags.JUNGLE_LOGS)) {
                     Direction side = direction.getOpposite();
-                    Vec3 hitPos = logPos.getCenter().add(side.getStepX() * 0.5, side.getStepY() * 0.5, side.getStepZ() * 0.5);
+                    Vec3 hitPos = Vec3.atCenterOf(logPos).add(side.getStepX() * 0.5, side.getStepY() * 0.5, side.getStepZ() * 0.5);
                     return new BlockHitResult(hitPos, side, logPos, false);
                 }
             }
@@ -353,7 +353,7 @@ public class AutoFarmModule extends Module {
         }
 
         BlockPos soilPos = pos.below();
-        Vec3 hitPos = soilPos.getCenter().add(0.0, 0.5, 0.0);
+        Vec3 hitPos = Vec3.atCenterOf(soilPos).add(0.0, 0.5, 0.0);
         return new BlockHitResult(hitPos, Direction.UP, soilPos, false);
     }
 
@@ -431,7 +431,7 @@ public class AutoFarmModule extends Module {
 
     private boolean hasLineOfSight(BlockPos pos) {
         Vec3 eyes = mc.player.getEyePosition();
-        Vec3 target = pos.getCenter();
+        Vec3 target = Vec3.atCenterOf(pos);
 
         HitResult hit = mc.level.clip(new ClipContext(
             eyes,

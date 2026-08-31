@@ -195,12 +195,12 @@ public class BonemealAuraModule extends Module {
             center.offset(-radius, -radius, -radius),
             center.offset(radius, radius, radius)
         )) {
-            double distanceSq = pos.getCenter().distanceToSqr(mc.player.getEyePosition());
+            double distanceSq = Vec3.atCenterOf(pos).distanceToSqr(mc.player.getEyePosition());
             if (distanceSq > rangeSq) continue;
             if (!isCorrectBlock(pos)) continue;
             if (checkLos.get() && !hasLineOfSight(pos)) continue;
 
-            blocks.add(new TargetBlock(pos.immutable(), pos.getCenter(), distanceSq));
+            blocks.add(new TargetBlock(pos.immutable(), Vec3.atCenterOf(pos), distanceSq));
         }
 
         blocks.sort(Comparator.comparingDouble(TargetBlock::distanceSq));
@@ -209,7 +209,7 @@ public class BonemealAuraModule extends Module {
 
     private boolean hasLineOfSight(BlockPos pos) {
         Vec3 eyes = mc.player.getEyePosition();
-        Vec3 target = pos.getCenter();
+        Vec3 target = Vec3.atCenterOf(pos);
 
         HitResult hit = mc.level.clip(new ClipContext(
             eyes,

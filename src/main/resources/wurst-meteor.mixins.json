@@ -5,6 +5,7 @@
   "client": [
     "AbstractContainerScreenAccessor",
     "AbstractContainerScreenMixin",
+    "BlockStateBaseAccessor",
     "ClientWorldMixin",
     "CreativeInventoryScreenAccessor",
     "EntityRendererMixin",

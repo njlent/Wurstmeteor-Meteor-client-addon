@@ -228,7 +228,7 @@ public class BedrockStashModule extends Module {
 
         while (!queue.isEmpty()) {
             BlockPos current = queue.removeFirst();
-            if (!mc.level.hasChunkAt(current)) {
+            if (!isChunkLoaded(current)) {
                 leaked = true;
                 continue;
             }
@@ -246,7 +246,7 @@ public class BedrockStashModule extends Module {
 
             for (Direction direction : DIRECTIONS) {
                 BlockPos neighbor = current.relative(direction);
-                if (!mc.level.hasChunkAt(neighbor)) {
+                if (!isChunkLoaded(neighbor)) {
                     leaked = true;
                     continue;
                 }
@@ -268,7 +268,7 @@ public class BedrockStashModule extends Module {
             for (Direction direction : DIRECTIONS) {
                 BlockPos neighbor = pos.relative(direction);
                 if (componentSet.contains(neighbor.asLong())) continue;
-                if (!mc.level.hasChunkAt(neighbor) || !mc.level.getBlockState(neighbor).is(Blocks.BEDROCK)) return false;
+                if (!isChunkLoaded(neighbor) || !mc.level.getBlockState(neighbor).is(Blocks.BEDROCK)) return false;
             }
         }
         return true;
@@ -277,9 +277,13 @@ public class BedrockStashModule extends Module {
     private boolean hasAdjacentBedrock(BlockPos pos) {
         for (Direction direction : DIRECTIONS) {
             BlockPos neighbor = pos.relative(direction);
-            if (mc.level.hasChunkAt(neighbor) && mc.level.getBlockState(neighbor).is(Blocks.BEDROCK)) return true;
+            if (isChunkLoaded(neighbor) && mc.level.getBlockState(neighbor).is(Blocks.BEDROCK)) return true;
         }
         return false;
+    }
+
+    private boolean isChunkLoaded(BlockPos pos) {
+        return mc.level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4);
     }
 
     private boolean hasTwoTallColumn(ArrayList<BlockPos> component, HashSet<Long> componentSet) {
