@@ -56,7 +56,7 @@ The implementation is structured for easy extension: each module is isolated and
 If you have suggestions, find bugs or are missing modules you want added - feel free to open an <a href="https://github.com/njlent/Wurstmeteor-Meteor-client-addon/issues">issue</a>.
 
 <br>
-<br>
+<img src="https://img.shields.io/github/downloads/njlent/Wurstmeteor-Meteor-client-addon/total"/>
 <br>
 
 > [!IMPORTANT]
