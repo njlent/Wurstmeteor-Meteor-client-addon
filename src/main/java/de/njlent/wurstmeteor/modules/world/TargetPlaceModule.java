@@ -2,6 +2,7 @@ package de.njlent.wurstmeteor.modules.world;
 
 import de.njlent.wurstmeteor.WurstMeteorAddon;
 import de.njlent.wurstmeteor.util.RotationPackets;
+import de.njlent.wurstmeteor.util.SwingUtils;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.renderer.ShapeMode;
@@ -145,7 +146,7 @@ public class TargetPlaceModule extends Module {
         RotationPackets.face(placement.hitVec());
 
         InteractionResult result = mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, new BlockHitResult(placement.hitVec(), placement.side(), placement.neighbor(), false));
-        if (result.consumesAction()) mc.player.swing(InteractionHand.MAIN_HAND);
+        if (result.consumesAction()) SwingUtils.swingInteract(InteractionHand.MAIN_HAND);
     }
 
     private void faceUnderside(BlockPos target) {

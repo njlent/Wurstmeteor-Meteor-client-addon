@@ -10,7 +10,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.util.Mth;
 
 import static meteordevelopment.meteorclient.utils.Utils.getWindowHeight;
-import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
+import static com.mojang.blaze3d.platform.InputConstants.MOUSE_BUTTON_LEFT;
 
 public class ScrollableDropdown<T> extends WDropdown<T> implements MeteorWidget {
     private final int maxVisibleValues;
@@ -173,7 +173,7 @@ public class ScrollableDropdown<T> extends WDropdown<T> implements MeteorWidget 
 
         @Override
         public boolean onMouseClicked(MouseButtonEvent click, boolean doubled) {
-            if (handleMouseOver && click.button() == GLFW_MOUSE_BUTTON_LEFT && !doubled) {
+            if (handleMouseOver && click.button() == MOUSE_BUTTON_LEFT && !doubled) {
                 draggingHandle = true;
                 return true;
             }

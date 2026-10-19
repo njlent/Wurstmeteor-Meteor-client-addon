@@ -1,6 +1,7 @@
 package de.njlent.wurstmeteor.modules.world;
 
 import de.njlent.wurstmeteor.WurstMeteorAddon;
+import de.njlent.wurstmeteor.util.SwingUtils;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.Setting;
@@ -10,7 +11,6 @@ import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.KeyMapping;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.core.BlockPos;
@@ -86,7 +86,7 @@ public class AutoMineModule extends Module {
             return;
         }
 
-        mc.player.swing(InteractionHand.MAIN_HAND);
+        SwingUtils.swingAttack();
 
         if (superFastMode.get()) {
             pressAttackKey();

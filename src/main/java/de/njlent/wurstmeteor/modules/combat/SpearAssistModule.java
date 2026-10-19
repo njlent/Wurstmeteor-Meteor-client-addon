@@ -1,6 +1,7 @@
 package de.njlent.wurstmeteor.modules.combat;
 
 import de.njlent.wurstmeteor.WurstMeteorAddon;
+import de.njlent.wurstmeteor.util.SwingUtils;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.renderer.ShapeMode;
@@ -147,7 +148,7 @@ public class SpearAssistModule extends Module {
 
         if (autoResumeCharge.get() && mc.options.keyUse.isDown() && !mc.player.isUsingItem()) {
             InteractionResult result = mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
-            if (result.consumesAction()) mc.player.swing(InteractionHand.MAIN_HAND);
+            if (result.consumesAction()) SwingUtils.swingInteract(InteractionHand.MAIN_HAND);
         }
 
         boolean charging = mc.player.isUsingItem() && isSpear(mc.player.getUseItem());
@@ -210,7 +211,7 @@ public class SpearAssistModule extends Module {
         if (autoAttackPrimed || !(mc.hitResult instanceof EntityHitResult hit)) return;
 
         mc.gameMode.attack(mc.player, hit.getEntity());
-        mc.player.swing(InteractionHand.MAIN_HAND);
+        SwingUtils.swingAttack();
         autoAttackPrimed = true;
     }
 

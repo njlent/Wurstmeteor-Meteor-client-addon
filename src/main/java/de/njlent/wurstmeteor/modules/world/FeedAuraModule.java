@@ -1,6 +1,7 @@
 package de.njlent.wurstmeteor.modules.world;
 
 import de.njlent.wurstmeteor.WurstMeteorAddon;
+import de.njlent.wurstmeteor.util.SwingUtils;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.renderer.ShapeMode;
@@ -158,7 +159,7 @@ public class FeedAuraModule extends Module {
         EntityHitResult hitResult = new EntityHitResult(target, target.getBoundingBox().getCenter());
         InteractionResult result = mc.gameMode.interact(mc.player, target, hitResult, hand);
 
-        if (result.consumesAction()) mc.player.swing(hand);
+        if (result.consumesAction()) SwingUtils.swingInteract(hand);
     }
 
     private boolean isUntamed(Animal animal) {

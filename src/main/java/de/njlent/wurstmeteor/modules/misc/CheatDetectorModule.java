@@ -255,11 +255,11 @@ public class CheatDetectorModule extends Module {
     private void checkAura(Player player, Stats s) {
         if (!aura.get() || isUsingElytra(player)) {
             s.swingTicks.clear();
-            s.lastSwingProgress = player.getAttackAnim(1.0F);
+            s.lastSwingProgress = player.getSwingAnimation(1.0F);
             return;
         }
 
-        float progress = player.getAttackAnim(1.0F);
+        float progress = player.getSwingAnimation(1.0F);
         if (s.lastSwingProgress > 0.6F && progress < 0.2F) s.swingTicks.addLast(ticks);
         s.lastSwingProgress = progress;
 
@@ -350,7 +350,7 @@ public class CheatDetectorModule extends Module {
             airTicks = 0;
             boatAirTicks = 0;
             swingTicks.clear();
-            lastSwingProgress = player.getAttackAnim(1.0F);
+            lastSwingProgress = player.getSwingAnimation(1.0F);
         }
     }
 }

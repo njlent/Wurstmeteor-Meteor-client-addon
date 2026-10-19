@@ -40,7 +40,7 @@ tasks {
     processResources {
         val propertyMap = mapOf(
             "version" to project.version,
-            "mc_version" to "~26.2"
+            "mc_version" to "~26.3"
         )
 
         inputs.properties(propertyMap)

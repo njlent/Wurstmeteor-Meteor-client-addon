@@ -7,6 +7,7 @@ import de.njlent.wurstmeteor.modules.world.autolibrarian.BookOfferListSetting;
 import de.njlent.wurstmeteor.modules.world.autolibrarian.WantedBooks;
 import de.njlent.wurstmeteor.util.KeyBindingUtils;
 import de.njlent.wurstmeteor.util.RotationPackets;
+import de.njlent.wurstmeteor.util.SwingUtils;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
@@ -393,7 +394,7 @@ public class AutoLibrarianModule extends Module {
 
         InteractionResult result = mc.gameMode.useItemOn(mc.player, hand, selection.toHitResult());
         if (result.consumesAction()) {
-            if (swing.get()) mc.player.swing(hand);
+            if (swing.get()) SwingUtils.swingInteract(hand);
             actionDelay = 4;
         }
 
@@ -417,7 +418,7 @@ public class AutoLibrarianModule extends Module {
         net.minecraft.world.phys.EntityHitResult hitResult = new net.minecraft.world.phys.EntityHitResult(villager, hitPos);
 
         InteractionResult result = mc.gameMode.interact(mc.player, villager, hitResult, InteractionHand.MAIN_HAND);
-        if (result.consumesAction() && swing.get()) mc.player.swing(InteractionHand.MAIN_HAND);
+        if (result.consumesAction() && swing.get()) SwingUtils.swingInteract(InteractionHand.MAIN_HAND);
 
         actionDelay = 4;
     }

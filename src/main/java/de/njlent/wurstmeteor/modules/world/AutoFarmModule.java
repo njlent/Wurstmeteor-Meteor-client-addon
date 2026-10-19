@@ -2,6 +2,7 @@ package de.njlent.wurstmeteor.modules.world;
 
 import de.njlent.wurstmeteor.WurstMeteorAddon;
 import de.njlent.wurstmeteor.util.RotationPackets;
+import de.njlent.wurstmeteor.util.SwingUtils;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.renderer.ShapeMode;
@@ -290,7 +291,7 @@ public class AutoFarmModule extends Module {
             InteractionResult result = mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
 
             if (result.consumesAction()) {
-                if (swing.get()) mc.player.swing(InteractionHand.MAIN_HAND);
+                if (swing.get()) SwingUtils.swingInteract(InteractionHand.MAIN_HAND);
                 actionDelay = 4;
                 return true;
             }
@@ -329,7 +330,7 @@ public class AutoFarmModule extends Module {
             InteractionResult result = mc.gameMode.useItemOn(mc.player, hand, hitResult);
 
             if (result.consumesAction()) {
-                if (swing.get()) mc.player.swing(hand);
+                if (swing.get()) SwingUtils.swingInteract(hand);
                 actionDelay = 4;
                 replantingSpots.remove(pos);
                 return true;

@@ -2,6 +2,7 @@ package de.njlent.wurstmeteor.modules.combat;
 
 import de.njlent.wurstmeteor.WurstMeteorAddon;
 import de.njlent.wurstmeteor.util.RotationPackets;
+import de.njlent.wurstmeteor.util.SwingUtils;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.friends.Friends;
@@ -14,7 +15,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
@@ -145,7 +145,7 @@ public class MultiAuraModule extends Module {
             mc.gameMode.attack(mc.player, target);
         }
 
-        if (swing.get()) mc.player.swing(InteractionHand.MAIN_HAND);
+        if (swing.get()) SwingUtils.swingAttack();
         nextAttackTime = now + delayMs;
     }
 

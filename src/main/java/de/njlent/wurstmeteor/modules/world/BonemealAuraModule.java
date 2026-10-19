@@ -2,6 +2,7 @@ package de.njlent.wurstmeteor.modules.world;
 
 import de.njlent.wurstmeteor.WurstMeteorAddon;
 import de.njlent.wurstmeteor.util.RotationPackets;
+import de.njlent.wurstmeteor.util.SwingUtils;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
@@ -162,7 +163,7 @@ public class BonemealAuraModule extends Module {
                 used |= useBonemeal(target, hand, false);
             }
             if (used) {
-                mc.player.swing(hand);
+                SwingUtils.swingInteract(hand);
                 if (!fastPlace.get()) useDelay = 4;
             }
             return;
@@ -181,7 +182,7 @@ public class BonemealAuraModule extends Module {
         InteractionResult result = mc.gameMode.useItemOn(mc.player, hand, hitResult);
         if (!result.consumesAction()) return false;
 
-        if (swingOnSuccess) mc.player.swing(hand);
+        if (swingOnSuccess) SwingUtils.swingInteract(hand);
         return true;
     }
 
@@ -232,7 +233,7 @@ public class BonemealAuraModule extends Module {
         Block block = state.getBlock();
 
         if (!(block instanceof BonemealableBlock fertilizable)) return false;
-        if (!fertilizable.isValidBonemealTarget(mc.level, pos, state)) return false;
+        if (!fertilizable.isValidBonemealTarget(mc.level, pos, state, BonemealSource.INTERACTION)) return false;
         if (block instanceof GrassBlock) return false;
 
         if (block instanceof SaplingBlock) return saplings.get();

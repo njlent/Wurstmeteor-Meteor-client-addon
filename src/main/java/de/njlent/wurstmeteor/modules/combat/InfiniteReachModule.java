@@ -1,6 +1,7 @@
 package de.njlent.wurstmeteor.modules.combat;
 
 import de.njlent.wurstmeteor.WurstMeteorAddon;
+import de.njlent.wurstmeteor.util.SwingUtils;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.renderer.ShapeMode;
@@ -19,7 +20,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
-import net.minecraft.network.protocol.game.ServerboundSwingPacket;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -393,8 +393,7 @@ public class InfiniteReachModule extends Module {
 
     private void swingHand() {
         if (!swing.get()) return;
-        mc.player.connection.send(new ServerboundSwingPacket(InteractionHand.MAIN_HAND));
-        mc.player.swing(InteractionHand.MAIN_HAND);
+        SwingUtils.swingAttack();
     }
 
     private double maxDistance() {

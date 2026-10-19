@@ -8,6 +8,7 @@ import de.njlent.wurstmeteor.modules.world.treebot.pathing.TreeBotPathFinder;
 import de.njlent.wurstmeteor.modules.world.treebot.pathing.TreeBotPathPos;
 import de.njlent.wurstmeteor.modules.world.treebot.pathing.TreeBotPathProcessor;
 import de.njlent.wurstmeteor.util.RotationPackets;
+import de.njlent.wurstmeteor.util.SwingUtils;
 import meteordevelopment.meteorclient.events.render.Render3DEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.mixin.MultiPlayerGameModeAccessor;
@@ -23,7 +24,6 @@ import meteordevelopment.meteorclient.utils.player.PlayerUtils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.network.protocol.game.ServerboundSwingPacket;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.AABB;
@@ -481,9 +481,9 @@ public class TreeBotModule extends Module {
                 }
                 case Server -> {
                     if (mc.getConnection() == null) return;
-                    mc.getConnection().send(new ServerboundSwingPacket(hand));
+                    SwingUtils.sendPunch();
                 }
-                case Client -> mc.player.swing(hand);
+                case Client -> SwingUtils.swingAttackClient(hand);
             }
         }
 

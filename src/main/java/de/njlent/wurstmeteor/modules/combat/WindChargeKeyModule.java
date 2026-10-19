@@ -1,6 +1,7 @@
 package de.njlent.wurstmeteor.modules.combat;
 
 import de.njlent.wurstmeteor.WurstMeteorAddon;
+import de.njlent.wurstmeteor.util.SwingUtils;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.IntSetting;
@@ -177,7 +178,7 @@ public class WindChargeKeyModule extends Module {
         if (!stack.is(Items.WIND_CHARGE)) return false;
 
         InteractionResult result = mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
-        if (result.consumesAction()) mc.player.swing(InteractionHand.MAIN_HAND);
+        if (result.consumesAction()) SwingUtils.swingInteract(InteractionHand.MAIN_HAND);
         return result.consumesAction();
     }
 
